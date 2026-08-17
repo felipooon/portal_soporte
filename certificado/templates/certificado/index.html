@@ -1,0 +1,927 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Certificado de Instalación — Innovex Chile</title>
+  <link rel="stylesheet" href="{% static 'certificado/styles.css' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Encabezado Superior Corporativo Innovex -->
+  <header class="app-header">
+    <div class="logo-title">
+      <img src="{% static 'certificado/logo.png' %}" alt="Innovex Chile" class="brand-logo">
+      <div class="divider"></div>
+      <div>
+        <h1 style="margin: 0; font-size: 18px;">SUITE DE SOPORTE TÉCNICO</h1>
+        <span class="sub-brand" style="font-size: 11px; color: #f5c400; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">DEPARTAMENTO DE SOPORTE INNOVEX</span>
+      </div>
+    </div>
+    
+    <div class="header-actions">
+      <!-- Controles de Certificados Fijos -->
+      <div class="cert-selector-group" id="certSelectorGroup">
+        <button class="btn btn-secondary btn-small" id="btnHeaderNuevo">Nuevo Certificado</button>
+        <select id="headerCertSelect" class="select-header">
+          <option value="">Cargar Certificado...</option>
+        </select>
+        <button class="btn btn-secondary btn-small" id="btnHeaderCargar">Cargar</button>
+        <button class="btn btn-danger btn-small" id="btnHeaderEliminar" title="Eliminar certificado seleccionado" style="background-color: #ef4444; color: #ffffff; border: none; margin-left: 4px;">Eliminar</button>
+      </div>
+
+      <!-- Toggle Modo Oscuro / Claro -->
+      <button class="btn btn-secondary btn-small" id="btnToggleTheme" title="Cambiar Tema Dark/Light">Modo Oscuro</button>
+
+      <button class="btn btn-secondary" id="btnGuardar">Guardar</button>
+      <button class="btn btn-primary" id="btnGenerarPDF">Compilar PDF Oficial</button>
+      <button class="btn btn-primary" id="btnCopiarTextoPlanoHeader" style="display: none;">Copiar Texto Plano</button>
+    </div>
+  </header>
+
+  <!-- Navegador Principal de Módulos de Soporte -->
+  <div class="module-bar-container" style="background: #0d0e12; border-bottom: 2px solid var(--border-color); padding: 8px 20px; display: flex; gap: 12px; align-items: center; overflow-x: auto;">
+    <button class="module-btn active" data-module="certificado" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid #0284c7; background: #0284c7; color: #ffffff; cursor: pointer;">1. Certificado de Instalación</button>
+    <button class="module-btn" data-module="revisor" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); cursor: pointer;">2. Revisor & Verificación Ingreso</button>
+    <button class="module-btn" data-module="ingreso_tecnico" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); cursor: pointer;">3. Información Ingreso Técnico</button>
+  </div>
+
+  <!-- Contenedor Principal -->
+  <div class="app-container">
+
+    <!-- Columna Izquierda: Formulario Editor -->
+    <main class="editor-pane">
+      
+      <!-- Navegación por Secciones del Certificado -->
+      <nav class="nav-tabs">
+        <button class="tab-btn active" data-tab="autofill">Auto-relleno Rápido</button>
+        <button class="tab-btn" data-tab="generales">1. Datos Generales</button>
+        <button class="tab-btn" data-tab="infraestructura">2. Infraestructura & Acceso</button>
+        <button class="tab-btn" data-tab="camara">3. Cámara & Estación</button>
+        <button class="tab-btn" data-tab="abiotico_ubicaciones">4. Abiótico & Ubicaciones</button>
+        <button class="tab-btn" data-tab="activacion_obs">5. Activación & Observaciones</button>
+        <button class="tab-btn" data-tab="evidencias_alarmas">6. Evidencias & Alarmas</button>
+      </nav>
+
+      <div class="tab-content-container">
+
+        <!-- TAB 1: AUTO-RELLENO RÁPIDO -->
+        <section class="tab-content active" id="tab-autofill">
+          <div class="card">
+            <h2>Auto-rellenado Inteligente por Consola</h2>
+            <p class="subtitle">Pegue la salida de terminal (<code>hostnamectl</code>, <code>ifconfig</code>, <code>config_location.json</code>, <code>cmd status</code>, <code>cmd motes</code>) para rellenar automáticamente la ficha.</p>
+            
+            <textarea id="autofillText" class="code-input" placeholder="Pegue la salida de consola aquí...
+
+Ejemplo:
+innovex@ce-tranqui1:~$ hostnamectl
+Static hostname: ce-tranqui1
+Operating System: Ubuntu 24.04.4 LTS
+..."></textarea>
+            
+            <div class="card-footer">
+              <button class="btn btn-primary" id="btnProcesarAutofill">Parsear & Autorellenar Campos</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: DATOS GENERALES -->
+        <section class="tab-content" id="tab-generales">
+          <div class="card">
+            <h2>1. Datos Generales de Instalación</h2>
+            
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Location (ID Centro) <span class="required-star">*</span></label>
+                <input type="text" id="gen_location" placeholder="ej. ce-tranqui1" required>
+              </div>
+              <div class="form-group">
+                <label>Nombre del Centro <span class="required-star">*</span></label>
+                <input type="text" id="gen_nombre_centro" placeholder="ej. CE-TRANQUI1" required>
+              </div>
+              <div class="form-group">
+                <label>Empresa Cliente</label>
+                <select id="gen_empresa_select"></select>
+                <input type="text" id="gen_empresa_custom" placeholder="Especificar empresa..." class="input-sub" style="display: none;">
+              </div>
+              <div class="form-group">
+                <label>Encargado de Área</label>
+                <select id="gen_encargado_select"></select>
+              </div>
+              <div class="form-group">
+                <label>Técnico de Visita</label>
+                <select id="gen_tecnico_select"></select>
+                <input type="text" id="gen_tecnico_custom" placeholder="Nombre técnico..." class="input-sub" style="display: none;">
+              </div>
+              <div class="form-group">
+                <label>N° Ficha / Registro (DP-xxxx)</label>
+                <input type="text" id="gen_numero_ficha" placeholder="ej. 9872">
+              </div>
+              <div class="form-group">
+                <label>Fecha de Instalación</label>
+                <input type="text" id="gen_fecha_instalacion" placeholder="DD/MM/AAAA">
+              </div>
+              <div class="form-group">
+                <label>Coordenadas GPS</label>
+                <input type="text" id="gen_coordenadas" placeholder="-42.749224 -73.580710">
+              </div>
+              <div class="form-group">
+                <label>Barrio / Zona</label>
+                <input type="text" id="gen_barrio" placeholder="ej. 10A">
+              </div>
+              <div class="form-group">
+                <label>Puerto Patrón</label>
+                <input type="text" id="gen_puerto_patron" placeholder="ej. Isla Lemuy">
+              </div>
+              <div class="form-group">
+                <label>Correo del Centro</label>
+                <input type="email" id="gen_correo_centro" placeholder="centro@camanchaca.cl">
+              </div>
+              <div class="form-group">
+                <label>Teléfono del Centro</label>
+                <input type="text" id="gen_telefono_centro" placeholder="+56 9 1234 5678">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 3: INFRAESTRUCTURA & ACCESO REMOTO -->
+        <section class="tab-content" id="tab-infraestructura">
+          <div class="card">
+            <h2>2. Infraestructura del PC de Monitoreo & Conectividad</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Categoría PC</label>
+                <select id="infra_categoria">
+                  <option value="Notebook">Notebook</option>
+                  <option value="Raspberry Pi">Raspberry Pi</option>
+                  <option value="PC Escritorio">PC Escritorio</option>
+                  <option value="Otro...">Otro...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Marca</label>
+                <input type="text" id="infra_marca" placeholder="Lenovo">
+              </div>
+              <div class="form-group">
+                <label>Modelo</label>
+                <input type="text" id="infra_modelo" placeholder="Lenovo V14 G3 IAP">
+              </div>
+              <div class="form-group">
+                <label>Sistema Operativo</label>
+                <select id="infra_so_select">
+                  <option value="Ubuntu 24.04 LTS">Ubuntu 24.04 LTS</option>
+                  <option value="Ubuntu 22.04 LTS">Ubuntu 22.04 LTS</option>
+                  <option value="Ubuntu 20.04 LTS">Ubuntu 20.04 LTS</option>
+                  <option value="Debian">Debian</option>
+                  <option value="Otro...">Otro...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>MAC Ethernet</label>
+                <input type="text" id="infra_mac_ethernet" placeholder="FC:5C:EE:D9:84:CD">
+              </div>
+              <div class="form-group">
+                <label>ID Equipo / PC</label>
+                <input type="text" id="infra_pc_id" placeholder="ej. AnyDesk / TeamViewer ID">
+              </div>
+              <div class="form-group">
+                <label>Contraseña PC</label>
+                <input type="text" id="infra_pc_password" placeholder="ej. Innovex2026">
+              </div>
+              <div class="form-group">
+                <label>Tipo de Conexión IP</label>
+                <select id="infra_tipo_ip">
+                  <option value="IP VPN tun0">IP VPN tun0</option>
+                  <option value="IP Fija">IP Fija</option>
+                  <option value="Ambas">Ambas</option>
+                </select>
+              </div>
+              <div class="form-group" id="group_infra_ip_fija" style="display: none;">
+                <label>IP Fija PC</label>
+                <input type="text" id="infra_ip_fija" placeholder="192.168.1.50">
+              </div>
+              <div class="form-group" id="group_infra_ip_vpn">
+                <label>IP VPN tun0</label>
+                <input type="text" id="infra_ip_vpn" placeholder="10.9.18.37">
+              </div>
+              <div class="form-group">
+                <label>Protocolo VPN</label>
+                <select id="acc_protocolo_select">
+                  <option value="OpenVPN">OpenVPN</option>
+                  <option value="FortiClient">FortiClient</option>
+                  <option value="Otro...">Otro...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Host Server</label>
+                <input type="text" id="acc_hostserver" placeholder="dataweb.innovex.cl">
+              </div>
+              <div class="form-group">
+                <label>Puerto Server</label>
+                <input type="text" id="acc_puerto_server" placeholder="8888">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 4: CÁMARA & ESTACIÓN -->
+        <section class="tab-content" id="tab-camara">
+          <div class="card">
+            <h2>3. Estación Meteorológica, Cámara & Switch PoE</h2>
+            
+            <h3 style="margin-top: 15px; margin-bottom: 10px; font-size: 14px; color: var(--text-color);">Estación Meteorológica</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>¿Estación Instalada?</label>
+                <select id="cam_estacion_instalada">
+                  <option value="No">No</option>
+                  <option value="Si">Si</option>
+                </select>
+              </div>
+              <div class="form-group" id="group_modelo_estacion" style="display: none;">
+                <label>Modelo Estación</label>
+                <select id="cam_modelo_estacion">
+                  <option value="Davis">Davis</option>
+                  <option value="AirMar">AirMar</option>
+                </select>
+              </div>
+              <div class="form-group" id="group_region_davis" style="display: none;">
+                <label>Región Davis</label>
+                <select id="cam_region_davis">
+                  <option value="US">US</option>
+                  <option value="EU">EU</option>
+                </select>
+              </div>
+              <div class="form-group" id="group_ubicacion_estacion" style="display: none;">
+                <label>Ubicación Estación</label>
+                <input type="text" id="cam_ubicacion_estacion" placeholder="Pontón">
+              </div>
+            </div>
+
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-color, #e2e8f0);">
+
+            <h3 style="margin-bottom: 10px; font-size: 14px; color: var(--text-color);">Cámara</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>¿Cámara Instalada?</label>
+                <select id="cam_instalada">
+                  <option value="No">No</option>
+                  <option value="Si">Si</option>
+                </select>
+              </div>
+              <div class="form-group" id="group_modelo_camara" style="display: none;">
+                <label>Modelo Cámara</label>
+                <select id="cam_modelo_camara">
+                  <option value="Domo">Domo</option>
+                  <option value="Bala">Bala</option>
+                </select>
+              </div>
+              <div class="form-group" id="group_conexion_camara" style="display: none;">
+                <label>Conexión Cámara</label>
+                <select id="cam_conexion_camara">
+                  <option value="Switch PoE">Switch PoE</option>
+                  <option value="Directa PC">Directa PC</option>
+                  <option value="PoE + HUB">PoE + HUB</option>
+                </select>
+              </div>
+              <div class="form-group" id="group_ip_camara" style="display: none;">
+                <label>IP Cámara</label>
+                <input type="text" id="cam_ip_fija_camara" placeholder="192.168.8.40">
+              </div>
+              <div class="form-group" id="group_ubicacion_camara" style="display: none;">
+                <label>Ubicación Cámara</label>
+                <input type="text" id="cam_ubicacion_camara" placeholder="Pontón">
+              </div>
+            </div>
+
+            <div id="section_switch_poe" style="display: none;">
+              <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-color, #e2e8f0);">
+              <h3 style="margin-bottom: 10px; font-size: 14px; color: var(--text-color);">Switch PoE</h3>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Modelo Switch PoE</label>
+                  <input type="text" id="cam_modelo_switch" placeholder="DS-3E0105P-E(B)">
+                </div>
+                <div class="form-group">
+                  <label>Ubicación Switch PoE</label>
+                  <input type="text" id="cam_ubicacion_switch" placeholder="Pontón">
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 5: MONITOREO ABIÓTICO, UBICACIONES & REPUESTOS -->
+        <section class="tab-content" id="tab-abiotico_ubicaciones">
+          <div class="card">
+            <h2>4. Monitoreo Abiótico (Antena Jennic)</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>¿Monitoreo Abiótico Instalado?</label>
+                <select id="ab_instalado">
+                  <option value="Si">Si</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tipo Antena</label>
+                <select id="ab_tipo_antena">
+                  <option value="Outdoor">Outdoor</option>
+                  <option value="Indoor">Indoor</option>
+                  <option value="Panel">Panel</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Ubicación de Antena</label>
+                <input type="text" id="ab_ubicacion_antena" placeholder="Techo Pontón / Púlpito">
+              </div>
+              <div class="form-group">
+                <label>Versión Firmware</label>
+                <input type="text" id="ab_version" placeholder="v2.0.2">
+              </div>
+              <div class="form-group">
+                <label>MAC Antena</label>
+                <input type="text" id="ab_mac" placeholder="00:15:8D:00:09:24:53:F7">
+              </div>
+              <div class="form-group">
+                <label>Pan ID</label>
+                <input type="text" id="ab_panid" placeholder="2020">
+              </div>
+            </div>
+          </div>
+
+          <div class="card margin-top">
+            <div class="card-header-action">
+              <h2>Equipos Jennic Detectados (cmd motes)</h2>
+            </div>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+              Equipos y MACs importados desde la consola (<code>cmd motes</code> / <code>cmd status</code>). Puede usar el selector o presionar <strong>📋 Copiar</strong> para asignarlas fácilmente en una ubicación o repuesto.
+            </p>
+            <div id="contenedorMotesList"></div>
+          </div>
+
+          <div class="card margin-top">
+            <div class="card-header-action">
+              <h2>Ubicaciones y Equipos Instalados</h2>
+              <button class="btn btn-secondary btn-small" id="btnToggleFormUbicacion">Agregar Ubicación</button>
+            </div>
+            
+            <div id="formNuevaUbicacion" class="inline-form-card" style="display: none;">
+              <h3>Nueva Ubicación</h3>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Nombre Ubicación</label>
+                  <input type="text" id="nueva_ub_nombre" placeholder="ej. Pontón Principal">
+                </div>
+                <div class="form-group">
+                  <label>Coordenadas GPS</label>
+                  <input type="text" id="nueva_ub_coords" placeholder="ej. -42.749224 -73.580710">
+                </div>
+              </div>
+              <div class="form-buttons">
+                <button class="btn btn-primary btn-small" id="btnGuardarUbicacion">Guardar Ubicación</button>
+                <button class="btn btn-secondary btn-small" id="btnCancelarUbicacion">Cancelar</button>
+              </div>
+            </div>
+
+            <div id="contenedorUbicaciones" class="ubicaciones-container"></div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>Equipos de Repuesto</h2>
+            
+            <div class="form-group margin-bottom">
+              <label>Ubicación Repuestos (Bodega / Almacenamiento)</label>
+              <input type="text" id="ub_repuestos_general" placeholder="ej. Bodega Pontón Principal">
+            </div>
+
+            <div class="subcard">
+              <div class="subcard-header">
+                <h3>Lista de Repuestos Registrados</h3>
+                <button class="btn btn-secondary btn-small" id="btnToggleFormRepuesto">Agregar Repuesto</button>
+              </div>
+
+              <div id="formNuevoRepuesto" class="inline-form-card" style="display: none;">
+                <h3>Agregar Repuesto</h3>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Tipo de Repuesto</label>
+                    <select id="rep_tipo_select">
+                      <option value="Equipo Jennic">Equipo Jennic</option>
+                      <option value="Sensor Integrado">Sensor Integrado</option>
+                      <option value="Sensor Óptico">Sensor Óptico</option>
+                      <option value="Sensor Conductividad">Sensor Conductividad</option>
+                    </select>
+                  </div>
+                  <div class="form-group" id="group_rep_mac">
+                    <label>MAC Address</label>
+                    <select id="rep_mac_select" style="margin-bottom: 6px;" onchange="if(this.value){ document.getElementById('rep_mac_input').value = this.value; }">
+                      <option value="">-- Seleccionar de motes detectados --</option>
+                    </select>
+                    <input type="text" id="rep_mac_input" placeholder="00:15:8D:00:09:82:2A:A5">
+                  </div>
+                  <div class="form-group" id="group_rep_serie" style="display: none;">
+                    <label>N° de Serie Sensor</label>
+                    <input type="text" id="rep_serie_input" placeholder="ej. 12345Y">
+                  </div>
+                  <div class="form-group" id="group_rep_metraje" style="display: none;">
+                    <label>Metraje (m)</label>
+                    <input type="text" id="rep_metraje_input" placeholder="ej. 15">
+                  </div>
+                </div>
+                <div class="form-buttons">
+                  <button class="btn btn-primary btn-small" id="btnGuardarRepuesto">Guardar Repuesto</button>
+                  <button class="btn btn-secondary btn-small" id="btnCancelarRepuesto">Cancelar</button>
+                </div>
+              </div>
+
+              <div id="listaRepuestos" class="items-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 6: ACTIVACIÓN & OBSERVACIONES -->
+        <section class="tab-content" id="tab-activacion_obs">
+          <div class="card">
+            <h2>5. Validación de Activación</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>IP Final Asignada</label>
+                <input type="text" id="act_ip_final" placeholder="10.170.47.28">
+              </div>
+              <div class="form-group">
+                <label>Interfaz</label>
+                <input type="text" id="act_interfaz" placeholder="wlp0s20f3">
+              </div>
+              <div class="form-group">
+                <label>Responsable Activación</label>
+                <select id="act_responsable_select"></select>
+                <input type="text" id="act_responsable_custom" placeholder="Especificar nombre..." class="input-sub" style="display: none;">
+              </div>
+              <div class="form-group">
+                <label>Estado Final</label>
+                <select id="act_estado_final">
+                  <option value="Operativo">Operativo</option>
+                  <option value="Pendiente">Pendiente</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>Checklist de Validación de Operatividad</h2>
+            <p class="subtitle">Personalice el estado de cada punto de control de la pauta de validación.</p>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Computador Instalado y Operativo</label>
+                <select id="chk_pc_operativo">
+                  <option value="OK">OK (Conforme)</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="N/A">N/A (No Aplica)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Configuración de Red Validada</label>
+                <select id="chk_red_validada">
+                  <option value="OK">OK (Conforme)</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="N/A">N/A (No Aplica)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Antena Receptora Operativa</label>
+                <select id="chk_antena_operativa">
+                  <option value="OK">OK (Conforme)</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="N/A">N/A (No Aplica)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Equipos Jennic Comunicando</label>
+                <select id="chk_jennic_comunicando">
+                  <option value="OK">OK (Conforme)</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="N/A">N/A (No Aplica)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Sensores Detectados y Datos</label>
+                <select id="chk_sensores_datos">
+                  <option value="OK">OK (Conforme)</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="N/A">N/A (No Aplica)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Archivos .dat Generándose</label>
+                <select id="chk_archivos_dat">
+                  <option value="OK">OK (Conforme)</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="N/A">N/A (No Aplica)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Transmisión Estación Meteorológica</label>
+                <select id="chk_transmision_estacion">
+                  <option value="OK">OK (Conforme)</option>
+                  <option value="N/A">N/A (No Aplica)</option>
+                  <option value="Pendiente">Pendiente</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Transmisión Datos Fotográficos</label>
+                <select id="chk_transmision_camara">
+                  <option value="OK">OK (Conforme)</option>
+                  <option value="N/A">N/A (No Aplica)</option>
+                  <option value="Pendiente">Pendiente</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Datos Visibles en DataWeb</label>
+                <select id="chk_datos_dataweb">
+                  <option value="OK">OK (Conforme)</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="N/A">N/A (No Aplica)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Alarmas Configuradas Estándar</label>
+                <select id="chk_alarmas_estandar">
+                  <option value="OK">OK (Conforme)</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="N/A">N/A (No Aplica)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>Observaciones y Notas Libres</h2>
+            <p class="subtitle">Deje este campo vacío para que en el PDF generado aparezca un recuadro limpio en blanco listo para escritura a mano y firma del cliente.</p>
+            <textarea id="obs_texto" class="text-input" placeholder="Comentarios u observaciones opcionales..."></textarea>
+          </div>
+        </section>
+
+        <!-- TAB 7: EVIDENCIAS & ALARMAS -->
+        <section class="tab-content" id="tab-evidencias_alarmas">
+          <div class="card">
+            <h2>6. Registro Fotográfico (Evidencias)</h2>
+            <p class="subtitle">Arrastre y suelte imágenes de evidencia (.jpg, .png) o haga clic para buscarlas en su equipo.</p>
+            
+            <div id="dropzoneEvidencias" class="dropzone">
+              <p>Arrastre imágenes aquí o <strong>Haga Clic para Buscar</strong></p>
+              <input type="file" id="fileEvidencias" multiple accept="image/*" style="display: none;">
+            </div>
+
+            <div id="gridEvidencias" class="evidencias-grid margin-top"></div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>Configuración de Alarmas</h2>
+            <p class="subtitle">Cargue una planilla Excel (.xlsx / .ods) o agregue filas manualmente.</p>
+            
+            <div id="dropzoneAlarmas" class="dropzone small-dropzone">
+              <p>Arrastre Planilla de Alarmas Excel (.xlsx / .ods) aquí</p>
+              <input type="file" id="fileAlarmas" accept=".xlsx,.ods" style="display: none;">
+            </div>
+
+            <div class="inline-form-card margin-top">
+              <h3>Pegar Alarmas desde Portapapeles (Copiar y Pegar)</h3>
+              <p class="subtitle" style="margin-bottom: 8px;">
+                Copie las filas de la tabla de alarmas (con columnas: <em>Estado, Usuario, Mínima, Máxima, Equipo, Sensor</em>) y péguelas directamente aquí.
+              </p>
+              <textarea id="txtPegarAlarmas" rows="4" style="width: 100%; font-family: monospace; font-size: 12px; margin-bottom: 8px;" placeholder="Pegue la tabla copiada aquí (ej. Activo   ac-centro.yatac   4,5   16,0   (3583) Yatac - Aquachile   Equipo 1...)"></textarea>
+              <button class="btn btn-primary btn-small" id="btnProcesarPegadoAlarmas">Cargar Alarmas Pegadas</button>
+            </div>
+
+            <div class="subcard margin-top">
+              <div class="subcard-header">
+                <h3>Tabla de Alarmas Configuradas</h3>
+                <button class="btn btn-secondary btn-small" id="btnAgregarFilaAlarma">Agregar Alarma</button>
+              </div>
+              <div class="table-responsive">
+                <table class="elementos-table" id="tablaAlarmas">
+                  <thead>
+                    <tr>
+                      <th>Status</th>
+                      <th>Equipo</th>
+                      <th>Sensor</th>
+                      <th>Usuario</th>
+                      <th>Conf. Mín</th>
+                      <th>Conf. Máx</th>
+                      <th>Medición</th>
+                      <th>Envío</th>
+                      <th>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbodyAlarmas"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 7: REVISOR DE EQUIPOS Y VERIFICACIÓN DE INGRESO -->
+        <section class="tab-content" id="tab-revisor">
+          <div class="card">
+            <h2>Revisor Remoto de Equipos & Verificación de Ingreso</h2>
+            <p class="subtitle">Consulte automáticamente vía SSH/Telnet o complete/modifique manualmente cualquier campo para generar el informe de Verificación de Ingreso.</p>
+
+            <h3 class="margin-top">Conexión Remota SSH / Telnet (Autollenar)</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Centro / Location</label>
+                <input type="text" id="rev_centro" placeholder="Ej.: CE-YELCHO o mw-yelcho.acuimatic.com">
+              </div>
+              <div class="form-group">
+                <label>IP / DNS Host</label>
+                <input type="text" id="rev_host" placeholder="ej. mw-yelcho.acuimatic.com">
+              </div>
+              <div class="form-group">
+                <label>Usuario SSH</label>
+                <input type="text" id="rev_usuario" value="innovex">
+              </div>
+              <div class="form-group">
+                <label>Contraseña SSH</label>
+                <input type="password" id="rev_contrasena" placeholder="Contraseña SSH (no se guarda)...">
+              </div>
+              <div class="form-group">
+                <label>Puerto SSH</label>
+                <input type="text" id="rev_puerto_ssh" value="22">
+              </div>
+              <div class="form-group">
+                <label>Puerto Telnet Equipos</label>
+                <input type="text" id="rev_puerto_telnet" value="9999">
+              </div>
+            </div>
+
+            <div style="margin-top: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+              <button class="btn btn-primary" id="btnEjecutarRevisor">Consultar y Autollenar Remotamente</button>
+              <button class="btn btn-secondary" id="btnAutoRellenarDesdeRevisor">Autorellenar Certificado Actual</button>
+            </div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>1. Datos Computador</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Tipo Conexión PC</label>
+                <select id="rev_tipo_conexion">
+                  <option value="Wifi">Wifi</option>
+                  <option value="Cableada">Cableada</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Sistema Operativo</label>
+                <input type="text" id="rev_sistema_operativo" value="Linux Ubuntu 20.04 LTS">
+              </div>
+              <div class="form-group">
+                <label>Kernel</label>
+                <input type="text" id="rev_kernel" value="5.4.0-105-generic">
+              </div>
+              <div class="form-group">
+                <label>Clave del Computador</label>
+                <input type="password" id="rev_clave_pc" autocomplete="off" placeholder="Ingrese la clave del equipo">
+              </div>
+              <div class="form-group">
+                <label>Visualización Dataweb</label>
+                <input type="text" id="rev_dataweb" value="Ok">
+              </div>
+            </div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>2. Paquetería Computador</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>pcinnovex</label>
+                <input type="text" id="rev_pcinnovex" value="changeset:   583">
+              </div>
+              <div class="form-group">
+                <label>cacheton</label>
+                <input type="text" id="rev_cacheton" value="changeset:   631">
+              </div>
+              <div class="form-group">
+                <label>python3</label>
+                <input type="text" id="rev_python3" value="changeset:   415">
+              </div>
+              <div class="form-group">
+                <label>Weather Davis</label>
+                <input type="text" id="rev_weather_davis" value="1.1.1">
+              </div>
+              <div class="form-group">
+                <label>Visibility-cam</label>
+                <input type="text" id="rev_visibility_cam" value="3.6">
+              </div>
+            </div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>3. Equipos & 4. Mediciones en Superficie</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Versión Equipos</label>
+                <input type="text" id="rev_version_equipos" value="v2.0.2">
+              </div>
+              <div class="form-group">
+                <label>Señal Mínima / General</label>
+                <input type="text" id="rev_senal" value="57/198">
+              </div>
+              <div class="form-group">
+                <label>Voltajes</label>
+                <input type="text" id="rev_voltajes" value="3.28V">
+              </div>
+              <div class="form-group">
+                <label>Saturación 95% - 105%</label>
+                <input type="text" id="rev_saturacion" value="OK">
+              </div>
+              <div class="form-group">
+                <label>Salinidad 0Psu - 1Psu</label>
+                <input type="text" id="rev_salinidad" value="OK">
+              </div>
+              <div class="form-group">
+                <label>Temperatura Ambiente</label>
+                <input type="text" id="rev_temperatura" value="OK">
+              </div>
+            </div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>5. Cámara, 6. Estación & 7. Repuestos</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>5. Cámara</label>
+                <select id="rev_camara">
+                  <option value="OK">OK</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Presenta atraso">Presenta atraso</option>
+                  <option value="No aplica">No aplica</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>6. Estación</label>
+                <select id="rev_estacion">
+                  <option value="OK">OK</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Presenta atraso">Presenta atraso</option>
+                  <option value="No aplica">No aplica</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>7. Repuestos (Texto o Detalle)</label>
+                <input type="text" id="rev_repuestos" placeholder="Dejar en blanco para formato '7. Repuestos: '">
+              </div>
+              <div class="form-group">
+                <label>Repuesto Equipo</label>
+                <select id="rev_repuesto_equipo">
+                  <option value="">(No especificar)</option>
+                  <option value="OK">OK</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="N/A">N/A</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Repuesto Sensor</label>
+                <select id="rev_repuesto_sensor">
+                  <option value="">(No especificar)</option>
+                  <option value="OK">OK</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="N/A">N/A</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Kit de Limpieza</label>
+                <select id="rev_repuesto_kit">
+                  <option value="">(No especificar)</option>
+                  <option value="OK">OK</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="N/A">N/A</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>8. Datos del Centro & 9. Observaciones</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Teléfono Centro</label>
+                <input type="text" id="rev_telefono" placeholder="Ej. +56 9 9100 1437">
+              </div>
+              <div class="form-group">
+                <label>Correo Centro</label>
+                <input type="email" id="rev_correo" placeholder="ej. centro@empresa.cl">
+              </div>
+            </div>
+            <div class="form-group margin-top">
+              <label>9. Observaciones y Notas Libres</label>
+              <textarea id="rev_observaciones" class="text-input" rows="4" placeholder="Ingrese observaciones de terreno adicionales (o dejar en blanco)..."></textarea>
+            </div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>Plantilla de Texto Plano (Resultado)</h2>
+            <p class="subtitle">Resultado formateado en texto plano listo para copiar y enviar.</p>
+            <textarea id="txtPlantillaRevisor" class="code-input" rows="22" style="font-family: monospace; font-size: 13px; line-height: 1.4;" readonly placeholder="La plantilla generada aparecerá aquí..."></textarea>
+            <div style="margin-top: 12px;">
+              <button class="btn btn-secondary" id="btnCopiarPlantillaRevisor">Copiar Plantilla</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 8: INFORMACIÓN PARA INGRESO DE TÉCNICO -->
+        <section class="tab-content" id="tab-ingreso_tecnico">
+          <div class="card">
+            <h2>Información para Ingreso de Técnico</h2>
+            <p class="subtitle">Complete las credenciales de acceso, consulte el status técnico (o ingrese los valores manualmente) y genere el reporte formateado de ingreso.</p>
+
+            <h3 class="margin-top">Parámetros de Conexión & Acceso</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>DNS / Host (tun0)</label>
+                <input type="text" id="ingreso_host" placeholder="Ej. ce-yelcho.acuimatic.com">
+              </div>
+              <div class="form-group">
+                <label>Usuario SSH</label>
+                <input type="text" id="ingreso_usuario" value="innovex">
+              </div>
+              <div class="form-group">
+                <label>Contraseña SSH</label>
+                <input type="password" id="ingreso_contrasena" placeholder="Contraseña SSH (opcional)...">
+              </div>
+              <div class="form-group">
+                <label>Clave PC</label>
+                <input type="password" id="ingreso_clave_pc" autocomplete="off" placeholder="Ingrese la clave del equipo">
+              </div>
+              <div class="form-group span-2">
+                <label>Acceso remoto</label>
+                <input type="text" id="ingreso_acceso_remoto" placeholder="Ej. Anydesk / TeamViewer / Comentarios de acceso">
+              </div>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+              <button class="btn btn-primary" id="btnEjecutarIngresoTecnico">Consultar Remotamente (SSH / Telnet)</button>
+              <button class="btn btn-secondary" id="btnGenerarPlantillaIngreso">Generar / Actualizar Plantilla</button>
+              <button class="btn btn-secondary" id="btnCopiarPlantillaIngreso">Copiar Plantilla</button>
+            </div>
+          </div>
+
+            <!-- Campos ocultos de datos técnicos para compatibilidad de script -->
+            <textarea id="ingreso_antena_status" style="display: none;"></textarea>
+            <textarea id="ingreso_equipos_conectados" style="display: none;"></textarea>
+            <textarea id="ingreso_voltaje_pilas" style="display: none;"></textarea>
+
+          <div class="card margin-top">
+            <h2>Observaciones y Notas Libres</h2>
+            <p class="subtitle">Comentarios o notas de terreno redactadas libremente por el usuario.</p>
+            <textarea id="ingreso_observaciones" class="text-input" rows="5" placeholder="Comentarios u observaciones opcionales..."></textarea>
+            <textarea id="ingreso_observaciones_generales" style="display: none;"></textarea>
+          </div>
+
+
+
+          <div class="card margin-top" style="display: none;">
+            <h2>Plantilla de Texto Plano (Resultado)</h2>
+            <p class="subtitle">Resultado formateado en texto plano listo para copiar y enviar.</p>
+            <textarea id="txtPlantillaIngresoTecnico" class="code-input" rows="22" style="font-family: monospace; font-size: 13px; line-height: 1.4;" readonly placeholder="La plantilla formateada de ingreso de técnico aparecerá aquí..."></textarea>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Columna Derecha: Previsualización Live Instantánea -->
+    <aside class="preview-pane">
+      <div class="preview-header">
+        <div class="preview-title">
+          <h2>Documento Live</h2>
+        </div>
+        <div class="preview-controls">
+          <button class="btn btn-small btn-secondary active" id="btnToggleVistaHTML">Live HTML</button>
+          <button class="btn btn-small btn-secondary" id="btnToggleVistaPDF">PDF Oficial</button>
+          <button class="btn btn-small btn-secondary" id="btnToggleVistaTexto" style="display: none;">Texto Plano</button>
+
+        </div>
+      </div>
+
+      <div id="liveHtmlContainer" class="a4-container">
+        <div class="a4-sheet" id="liveHtmlSheet"></div>
+      </div>
+
+      <div id="pdfContainer" class="a4-container" style="display: none;">
+        <iframe id="pdfFrame" src="about:blank" title="Previsualización PDF"></iframe>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="{% static 'certificado/app.js' %}"></script>
+</body>
+</html>
