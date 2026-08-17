@@ -13,8 +13,18 @@ from certificado.utils.autofill import procesar_autofill
 from certificado.utils.excel_parser import parsear_alarmas_excel, parsear_alarmas_texto
 from certificado.pdf.generador_pdf import GeneradorPDF
 
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+
 def index(request):
-    return render(request, 'certificado/index.html')
+    html = render_to_string('certificado/index.html', request=request)
+    # Inyectar dinámicamente el botón de volver al portal para no modificar el HTML original
+    boton_html = '<a href="/" class="btn btn-secondary btn-small" style="background:#003459; color:white; border-color:#003459;">🏠 Volver al Portal</a>'
+    html = html.replace(
+        '<div class="header-actions">',
+        f'<div class="header-actions">\n      {boton_html}'
+    )
+    return HttpResponse(html)
 
 @require_http_methods(["GET"])
 def api_list(request):
