@@ -38,22 +38,21 @@ def buscar_wiki(request):
     auth = (settings.TRAC_USER, settings.TRAC_PASSWORD)
     
     try:
-        # Ignore SSL just in case the internal cert is invalid
         response = requests.get(url, auth=auth, timeout=5, verify=False)
-        if response.status_code != 200:
-            return JsonResponse({'error': 'Trac auth or connection failed'}, status=500)
+        if response.status_code == 401:
+            return JsonResponse({'error': 'Error 401: Credenciales de Trac incorrectas en el archivo .env'}, status=401)
+        elif response.status_code != 200:
+            return JsonResponse({'error': f'Error {response.status_code} al conectar con Trac'}, status=response.status_code)
             
         soup = BeautifulSoup(response.content, 'html.parser')
         results = []
         
-        # Trac search results are usually in <dl id="results">
         dl = soup.find('dl', id='results')
         if dl:
             for dt, dd in zip(dl.find_all('dt'), dl.find_all('dd')):
                 a_tag = dt.find('a')
                 if a_tag:
                     title = a_tag.text.strip()
-                    # Trac links are relative to the root, ensure absolute URL
                     href = a_tag.get('href', '')
                     if href.startswith('/'):
                         link = f"https://intranet.innovex.cl{href}"
@@ -66,8 +65,45 @@ def buscar_wiki(request):
                         'snippet': snippet
                     })
         return JsonResponse({'results': results})
+    except requests.exceptions.Timeout:
+        return JsonResponse({'error': 'Error: Tiempo de espera agotado al conectar con Trac (Timeout).'}, status=504)
+    except requests.exceptions.ConnectionError:
+        return JsonResponse({'error': 'Error: No se pudo establecer conexión con intranet.innovex.cl. Verifica la VPN o red.'}, status=502)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
+
+def trac_wiki(request):
+    auth = (settings.TRAC_USER, settings.TRAC_PASSWORD)
+    index_url = "https://intranet.innovex.cl/operaciones/wiki/TitleIndex"
+    enlaces_indice = []
+    error_msg = None
+
+    try:
+        response = requests.get(index_url, auth=auth, timeout=5, verify=False)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'html.parser')
+            # Trac TitleIndex typically puts links inside <div class="titleindex"> or <ul> under content
+            content_div = soup.find('div', id='content')
+            if content_div:
+                for a_tag in content_div.find_all('a'):
+                    href = a_tag.get('href', '')
+                    text = a_tag.text.strip()
+                    if href.startswith('/operaciones/wiki/') and text and not text.startswith('TitleIndex'):
+                        enlaces_indice.append({
+                            'titulo': text,
+                            'url': f"https://intranet.innovex.cl{href}"
+                        })
+        elif response.status_code == 401:
+            error_msg = "Error 401: Credenciales incorrectas. Verifica el archivo .env."
+        else:
+            error_msg = f"Error {response.status_code} al cargar el índice."
+    except Exception as e:
+        error_msg = f"No se pudo cargar el índice de Trac: {str(e)}"
+
+    return render(request, 'dashboard/trac_wiki.html', {
+        'enlaces_indice': enlaces_indice,
+        'error_msg': error_msg
+    })
 
 def correos_masivos(request):
     if request.method == 'POST':

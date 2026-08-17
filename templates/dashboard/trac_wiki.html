@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Trac Wiki - Innovex Soporte{% endblock %}
+
+{% block content %}
+<header style="text-align: center; margin-bottom: 3rem;">
+    <h1>Trac Wiki</h1>
+    <p class="subtitle">Buscador y explorador de procedimientos internos</p>
+    <a href="{% url 'index' %}" class="btn btn-secondary btn-small" style="margin-top: 1rem;">🏠 Volver al Menú</a>
+</header>
+
+<h2 class="section-title">Buscar en Wiki</h2>
+<div class="card glass-effect" style="margin-bottom: 3rem; padding: 1.5rem;">
+    <div style="display: flex; gap: 1rem;">
+        <input type="text" id="wiki-search-input" placeholder="Buscar manuales, procedimientos, configuraciones..." 
+               style="flex-grow: 1; padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: var(--text-primary); font-size: 1.1rem;">
+    </div>
+    
+    <div id="wiki-results" style="margin-top: 1.5rem; display: none;">
+        <!-- Results will be injected here -->
+    </div>
+</div>
+
+<h2 class="section-title">Índice Completo de Trac</h2>
+{% if error_msg %}
+<div class="card glass-effect" style="border-left: 4px solid #ef4444; padding: 1rem;">
+    <p style="color: #ef4444; margin: 0;">⚠️ {{ error_msg }}</p>
+</div>
+{% else %}
+<div class="card glass-effect" style="padding: 2rem;">
+    {% if enlaces_indice %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
+        {% for enlace in enlaces_indice %}
+            <a href="{{ enlace.url }}" target="_blank" style="color: var(--accent-primary); text-decoration: none; padding: 0.5rem; border-radius: 4px; background: rgba(255,255,255,0.05); transition: background 0.2s;">
+                📄 {{ enlace.titulo }}
+            </a>
+        {% endfor %}
+        </div>
+    {% else %}
+        <p style="color: var(--text-secondary);">No se encontraron artículos en el índice.</p>
+    {% endif %}
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Lógica Buscador Trac
+    const searchInput = document.getElementById('wiki-search-input');
+    const resultsContainer = document.getElementById('wiki-results');
+    let searchTimeout;
+
+    if(searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = searchInput.value.trim();
+            
+            if(query.length < 3) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                resultsContainer.style.display = 'block';
+                resultsContainer.innerHTML = '<p style="color: var(--text-secondary);">Buscando en la Wiki...</p>';
+
+                fetch("{% url 'buscar_wiki' %}?q=" + encodeURIComponent(query))
+                .then(r => r.json())
+                .then(data => {
+                    if(data.error) {
+                        resultsContainer.innerHTML = '<p style="color: #ef4444;">' + data.error + '</p>';
+                        return;
+                    }
+                    if(data.results.length === 0) {
+                        resultsContainer.innerHTML = '<p style="color: var(--warning);">No se encontraron resultados para "' + query + '".</p>';
+                        return;
+                    }
+
+                    let html = '<div style="display: flex; flex-direction: column; gap: 1rem;">';
+                    data.results.forEach(res => {
+                        html += `
+                        <a href="${res.link}" target="_blank" class="card glass-effect" style="padding: 1rem; border-left: 4px solid var(--accent-primary); transition: transform 0.2s;">
+                            <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; color: var(--accent-primary);">${res.title}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">${res.snippet}</p>
+                        </a>`;
+                    });
+                    html += '</div>';
+                    resultsContainer.innerHTML = html;
+                })
+                .catch(err => {
+                    resultsContainer.innerHTML = '<p style="color: #ef4444;">Error de conexión.</p>';
+                });
+            }, 600);
+        });
+    }
+});
+</script>
+{% endblock %}
