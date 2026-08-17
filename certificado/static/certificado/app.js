@@ -1565,7 +1565,7 @@ function renderLiveHtmlSheet() {
       <!-- Encabezado Oficial ReportLab 3 Cajas -->
       <div class="reportlab-header-box">
         <div class="reportlab-header-left">
-          <img src="logo.png" alt="Innovex">
+          <img src="/static/certificado/logo.png" alt="Innovex">
         </div>
         <div class="reportlab-header-center">
           VALIDACIÓN DE INSTALACIÓN
