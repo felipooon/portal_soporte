@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Calendario - Innovex Soporte{% endblock %}
+
+{% block content %}
+<div class="page-container glass-effect"
+    style="padding: 2rem; border-radius: 1rem; margin-top: 2rem; max-width: 1000px;">
+    <h1>Calendario de Turnos y Actividades</h1>
+    <p class="subtitle">Visualiza la planificación mensual directamente desde Google Sheets.</p>
+
+    <div
+        style="margin-top: 2rem; border-radius: 0.5rem; overflow: hidden; border: 1px solid var(--glass-border); aspect-ratio: 16/9; background: rgba(0,0,0,0.2);">
+        <!-- Reemplaza el src con el enlace "Publicar en la web -> Incorporar" de tu Google Sheet -->
+        <iframe
+            src="https://docs.google.com/spreadsheets/d/1Qt4UWxIGL04N9z2cVY3dm5hPQuigHMh-3arxlH21pCs/htmlembed?gid=567077492"
+            width="100%" height="100%" frameborder="0" style="display: block;">
+        </iframe>
+    </div>
+
+    <div style="margin-top: 2rem; text-align: center;">
+        <a href="{% url 'index' %}" class="btn" style="color: var(--text-secondary);">← Volver al Dashboard</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Correos Masivos - Innovex Soporte{% endblock %}
+
+{% block content %}
+<div class="page-container glass-effect" style="padding: 2rem; border-radius: 1rem; margin-top: 2rem;">
+    <h1>Correos Masivos Fin de Semana</h1>
+    <p class="subtitle">Programa o envía correos a clientes para notificaciones de fin de semana.</p>
+    
+    {% if messages %}
+        <div class="messages" style="margin-bottom: 1.5rem; color: #10b981;">
+            {% for message in messages %}
+                <p{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <form action="{% url 'correos_masivos' %}" method="POST" style="margin-top: 2rem;">
+        {% csrf_token %}
+        <div class="grid" style="gap: 1rem;">
+            <div class="form-group">
+                <label for="semana">Número de Semana</label>
+                <input type="number" id="semana" name="semana" placeholder="Ej: 33" required>
+            </div>
+            <div class="form-group">
+                <label for="personal_id">Personal de Turno</label>
+                <select id="personal_id" name="personal_id" required>
+                    <option value="">Seleccione al asistente...</option>
+                    {% for p in personal_list %}
+                        <option value="{{ p.id }}">{{ p.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        
+        <div class="grid" style="gap: 1rem;">
+            <div class="form-group">
+                <label for="fecha_sabado">Fecha Sábado</label>
+                <input type="text" id="fecha_sabado" name="fecha_sabado" placeholder="Ej: 15/08" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="fecha_domingo">Fecha Domingo</label>
+                <input type="text" id="fecha_domingo" name="fecha_domingo" placeholder="Ej: 16/08" required>
+            </div>
+        </div>
+        
+        <p style="margin-top: 1rem; margin-bottom: 2rem; font-size: 0.9rem; color: var(--text-secondary);">
+            Se enviará el correo automáticamente a todos los clientes y centros activos en el sistema, firmados a nombre del personal seleccionado.
+        </p>
+
+        <button type="submit" class="btn btn-primary">Enviar Correos Masivos</button>
+        <a href="{% url 'index' %}" class="btn" style="color: var(--text-secondary); margin-left: 1rem;">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

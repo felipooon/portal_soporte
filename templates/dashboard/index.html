@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Innovex Soporte{% endblock %}
+
+{% block content %}
+<header style="text-align: center; margin-bottom: 3rem;">
+    <h1>Portal de Soporte</h1>
+    <p class="subtitle">Herramientas y servicios internos para el equipo de Innovex</p>
+</header>
+
+<h2 class="section-title">Herramientas Soporte</h2>
+<div class="grid">
+    <a href="{% url 'correos_masivos' %}" class="card glass-effect">
+        <div class="card-icon">✉️</div>
+        <h3>Correos Masivos Fin de Semana</h3>
+        <p>Herramienta para programar y enviar comunicaciones masivas a clientes durante los fines de semana.</p>
+    </a>
+
+    <a href="{% url 'certificados' %}" class="card glass-effect">
+        <div class="card-icon">📄</div>
+        <h3>Certificado de Instalaciones</h3>
+        <p>Generación y consulta de certificados para las instalaciones de equipos y sistemas.</p>
+    </a>
+</div>
+
+<h2 class="section-title">Planillas y Reportes</h2>
+<div class="grid">
+    <a href="https://docs.google.com/spreadsheets/d/1HAMmFlPS8s4N8sIgcZLLryEVQzIsWRxoU5ST3oBZDQM/edit?gid=1731426176#gid=1731426176"
+        target="_blank" class="card glass-effect">
+        <div class="card-icon">📊</div>
+        <h3>IP Fijas</h3>
+        <p>Planilla Google Sheets de registro de IPs fijas de clientes e instalaciones.</p>
+    </a>
+
+    <a href="https://docs.google.com/spreadsheets/d/1bwpqpb3B0EtWXZdNWAPQNYis9KRtD2NNehN9fIfwvWY/edit?gid=398395734#gid=398395734"
+        target="_blank" class="card glass-effect">
+        <div class="card-icon">⚠️</div>
+        <h3>Fallas MAM</h3>
+        <p>Planilla Google Sheets para el seguimiento y reporte de Fallas MAM.</p>
+    </a>
+
+    <a href="{% url 'calendario' %}" class="card glass-effect">
+        <div class="card-icon">📅</div>
+        <h3>Calendario</h3>
+        <p>Vista embebida del calendario de turnos y actividades del equipo.</p>
+    </a>
+</div>
+
+<h2 class="section-title">Servicios Innovex</h2>
+<div class="grid">
+    <a href="https://dataweb.innovex.cl" target="_blank" class="card glass-effect">
+        <div class="card-icon">🌐</div>
+        <h3>Dataweb</h3>
+        <p>Plataforma de datos y servicios web para clientes de Innovex.</p>
+    </a>
+
+    <a href="https://nextcore.innovex.cl/monitor" target="_blank" class="card glass-effect">
+        <div class="card-icon">🖥️</div>
+        <h3>Nextcore</h3>
+        <p>Monitor del sistema Nextcore para equipos e instalaciones.</p>
+    </a>
+
+    <a href="https://erp.innovex.cl/web#action=106&model=calendar.event&view_type=calendar&menu_id=81" target="_blank"
+        class="card glass-effect">
+        <div class="card-icon">⚙️</div>
+        <h3>Odoo</h3>
+        <p>Acceso directo al calendario y planificación del ERP corporativo.</p>
+    </a>
+</div>
+{% endblock %}

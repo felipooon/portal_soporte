@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es-cl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Portal de Soporte - Innovex{% endblock %}</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="background-animation"></div>
+    
+    <nav class="navbar glass-effect">
+        <div class="nav-container">
+            <a href="{% url 'index' %}" class="brand">
+                <img src="https://dataweb.innovex.cl/static/img/innovex.png" alt="Innovex Logo" style="height: 30px; margin-right: 10px;">
+                <span><span style="color: #f1c40f;">In</span>novex</span> <span class="brand-thin">Support</span>
+            </a>
+            <div class="nav-links">
+                <a href="{% url 'index' %}" class="nav-link">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>&copy; {% now "Y" %} Equipo de Soporte Innovex.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Certificados - Innovex Soporte{% endblock %}
+
+{% block content %}
+<div class="page-container glass-effect" style="padding: 2rem; border-radius: 1rem; margin-top: 2rem;">
+    <h1>Certificado de Instalaciones</h1>
+    <p class="subtitle">Genera un nuevo certificado de instalación de equipos.</p>
+    
+    <form action="#" method="POST" style="margin-top: 2rem;">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="cliente">Nombre del Cliente</label>
+            <input type="text" id="cliente" name="cliente" placeholder="Nombre de la empresa o cliente particular..." required>
+        </div>
+        
+        <div class="grid" style="gap: 1rem;">
+            <div class="form-group">
+                <label for="fecha">Fecha de Instalación</label>
+                <input type="date" id="fecha" name="fecha" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="tecnico">Técnico a Cargo</label>
+                <input type="text" id="tecnico" name="tecnico" placeholder="Nombre del técnico..." required>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="equipos">Equipos Instalados</label>
+            <textarea id="equipos" name="equipos" rows="4" placeholder="Detalle los equipos, números de serie y configuración..." required></textarea>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" onclick="event.preventDefault(); alert('Funcionalidad en desarrollo.');">Generar Certificado (PDF)</button>
+        <a href="{% url 'index' %}" class="btn" style="color: var(--text-secondary); margin-left: 1rem;">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
