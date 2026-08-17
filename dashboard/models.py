@@ -37,16 +37,3 @@ class Bitacora(models.Model):
         verbose_name = 'Bitácora de Turno'
         verbose_name_plural = 'Bitácoras de Turno'
 
-class EnlaceDocumentacion(models.Model):
-    titulo = models.CharField(max_length=100)
-    url = models.URLField()
-    icono = models.CharField(max_length=50, default='📘', help_text="Ej: 📘, 🔗, ⚙️")
-    orden = models.IntegerField(default=0)
-
-    def __str__(self):
-        return self.titulo
-
-    class Meta:
-        verbose_name = 'Enlace de Documentación'
-        verbose_name_plural = 'Enlaces de Documentación'
-        ordering = ['orden']

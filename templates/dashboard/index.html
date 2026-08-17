@@ -57,19 +57,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<h2 class="section-title">Documentación / Manuales</h2>
-<div class="grid" style="margin-bottom: 3rem;">
-    {% for enlace in enlaces %}
-    <a href="{{ enlace.url }}" target="_blank" class="card glass-effect" style="padding: 1.5rem; display: flex; align-items: center; gap: 1rem;">
-        <div style="font-size: 2rem;">{{ enlace.icono }}</div>
-        <div>
-            <h3 style="margin: 0; font-size: 1.1rem;">{{ enlace.titulo }}</h3>
-        </div>
-    </a>
-    {% empty %}
-    <p style="color: var(--text-secondary);">No hay manuales cargados aún. Agrégalos desde el panel de administración.</p>
-    {% endfor %}
-</div>
 
 <h2 class="section-title">Herramientas Soporte</h2>
 <div class="grid">

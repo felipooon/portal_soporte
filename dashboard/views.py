@@ -4,16 +4,14 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.http import JsonResponse
-from .models import PersonalSoporte, ClienteCentro, Bitacora, EnlaceDocumentacion
+from .models import PersonalSoporte, ClienteCentro, Bitacora
 import datetime
 import json
 
 def index(request):
     bitacora, created = Bitacora.objects.get_or_create(id=1)
-    enlaces = EnlaceDocumentacion.objects.all()
     return render(request, 'dashboard/index.html', {
-        'bitacora': bitacora,
-        'enlaces': enlaces
+        'bitacora': bitacora
     })
 
 def actualizar_bitacora(request):
