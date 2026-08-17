@@ -20,7 +20,7 @@
         <div class="grid" style="gap: 1rem;">
             <div class="form-group">
                 <label for="semana">Número de Semana</label>
-                <input type="number" id="semana" name="semana" placeholder="Ej: 33" required>
+                <input type="number" id="semana" name="semana" value="{{ current_week }}" readonly style="background: rgba(0,0,0,0.5); cursor: not-allowed; color: #a0a0a0;">
             </div>
             <div class="form-group">
                 <label for="personal_id">Personal de Turno</label>
@@ -36,12 +36,12 @@
         <div class="grid" style="gap: 1rem;">
             <div class="form-group">
                 <label for="fecha_sabado">Fecha Sábado</label>
-                <input type="text" id="fecha_sabado" name="fecha_sabado" placeholder="Ej: 15/08" required>
+                <input type="date" id="fecha_sabado" name="fecha_sabado" required>
             </div>
             
             <div class="form-group">
                 <label for="fecha_domingo">Fecha Domingo</label>
-                <input type="text" id="fecha_domingo" name="fecha_domingo" placeholder="Ej: 16/08" required>
+                <input type="date" id="fecha_domingo" name="fecha_domingo" required>
             </div>
         </div>
 

@@ -8,11 +8,26 @@ from .models import PersonalSoporte, ClienteCentro
 def index(request):
     return render(request, 'dashboard/index.html')
 
+import datetime
+
 def correos_masivos(request):
     if request.method == 'POST':
         semana = request.POST.get('semana')
         fecha_sabado = request.POST.get('fecha_sabado')
         fecha_domingo = request.POST.get('fecha_domingo')
+        
+        try:
+            fs = datetime.datetime.strptime(fecha_sabado, '%Y-%m-%d')
+            fecha_sabado = fs.strftime('%d/%m')
+        except ValueError:
+            pass
+            
+        try:
+            fd = datetime.datetime.strptime(fecha_domingo, '%Y-%m-%d')
+            fecha_domingo = fd.strftime('%d/%m')
+        except ValueError:
+            pass
+
         personal_id = request.POST.get('personal_id')
         
         try:
@@ -68,7 +83,11 @@ def correos_masivos(request):
 
     # GET request: load personal list
     personal_list = PersonalSoporte.objects.all()
-    return render(request, 'dashboard/correos_masivos.html', {'personal_list': personal_list})
+    current_week = datetime.date.today().isocalendar()[1]
+    return render(request, 'dashboard/correos_masivos.html', {
+        'personal_list': personal_list,
+        'current_week': current_week
+    })
 
 def certificados(request):
     return render(request, 'dashboard/certificados.html')
