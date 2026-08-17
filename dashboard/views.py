@@ -72,25 +72,33 @@ def buscar_wiki(request):
     except Exception as e:
         return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
 
+from collections import defaultdict
+
 def trac_wiki(request):
     auth = (settings.TRAC_USER, settings.TRAC_PASSWORD)
     index_url = "https://intranet.innovex.cl/operaciones/wiki/TitleIndex"
-    enlaces_indice = []
+    indice_agrupado = defaultdict(list)
     error_msg = None
 
     try:
         response = requests.get(index_url, auth=auth, timeout=5, verify=False)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
-            # Trac TitleIndex typically puts links inside <div class="titleindex"> or <ul> under content
             content_div = soup.find('div', id='content')
             if content_div:
                 for a_tag in content_div.find_all('a'):
                     href = a_tag.get('href', '')
                     text = a_tag.text.strip()
                     if href.startswith('/operaciones/wiki/') and text and not text.startswith('TitleIndex'):
-                        enlaces_indice.append({
-                            'titulo': text,
+                        if '/' in text:
+                            grupo = text.split('/')[0]
+                            display_text = text.split('/', 1)[1]
+                        else:
+                            grupo = text[0].upper() if text else '#'
+                            display_text = text
+                            
+                        indice_agrupado[grupo].append({
+                            'titulo': display_text,
                             'url': f"https://intranet.innovex.cl{href}"
                         })
         elif response.status_code == 401:
@@ -100,8 +108,11 @@ def trac_wiki(request):
     except Exception as e:
         error_msg = f"No se pudo cargar el índice de Trac: {str(e)}"
 
+    # Sort groups alphabetically
+    sorted_indice = dict(sorted(indice_agrupado.items()))
+
     return render(request, 'dashboard/trac_wiki.html', {
-        'enlaces_indice': enlaces_indice,
+        'indice_agrupado': sorted_indice,
         'error_msg': error_msg
     })
 

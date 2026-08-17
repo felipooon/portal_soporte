@@ -28,14 +28,21 @@
 </div>
 {% else %}
 <div class="card glass-effect" style="padding: 2rem;">
-    {% if enlaces_indice %}
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
-        {% for enlace in enlaces_indice %}
-            <a href="{{ enlace.url }}" target="_blank" style="color: var(--accent-primary); text-decoration: none; padding: 0.5rem; border-radius: 4px; background: rgba(255,255,255,0.05); transition: background 0.2s;">
-                📄 {{ enlace.titulo }}
-            </a>
-        {% endfor %}
+    {% if indice_agrupado %}
+        {% for grupo, enlaces in indice_agrupado.items %}
+        <div style="margin-bottom: 2.5rem;">
+            <h3 style="border-bottom: 2px solid var(--accent-primary); padding-bottom: 0.5rem; color: var(--accent-primary); margin-bottom: 1rem; display: inline-block;">
+                📁 {{ grupo }}
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">
+            {% for enlace in enlaces %}
+                <a href="{{ enlace.url }}" target="_blank" style="color: var(--text-primary); text-decoration: none; padding: 0.8rem; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); transition: background 0.2s; display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem;">
+                    <span style="font-size: 1.2rem;">📄</span> {{ enlace.titulo }}
+                </a>
+            {% endfor %}
+            </div>
         </div>
+        {% endfor %}
     {% else %}
         <p style="color: var(--text-secondary);">No se encontraron artículos en el índice.</p>
     {% endif %}
