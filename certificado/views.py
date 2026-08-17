@@ -18,6 +18,11 @@ from django.http import HttpResponse
 
 def index(request):
     html = render_to_string('certificado/index.html', request=request)
+    
+    # Inyectar la hoja de estilos de unificación visual sin tocar el HTML original
+    css_override = '<link rel="stylesheet" href="/static/css/certificado_override.css">'
+    html = html.replace('</head>', f'  {css_override}\n</head>')
+    
     # Inyectar dinámicamente el botón de volver al portal para no modificar el HTML original
     boton_html = '<a href="/" class="btn btn-secondary btn-small">🏠 Volver al Menú</a>'
     html = html.replace(
