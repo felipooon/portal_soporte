@@ -2897,21 +2897,27 @@ function mostrarVistaPreviaIngresoDerecha() {
   }
 }
 
-function copiarPlantillaIngreso() {
+async function copiarPlantillaIngreso() {
   let txt = document.getElementById("txtPlantillaIngresoTecnico").value;
   if (!txt.trim()) {
     generarPlantillaIngreso();
-    setTimeout(() => {
+    setTimeout(async () => {
       txt = document.getElementById("txtPlantillaIngresoTecnico").value;
       if (txt) {
-        navigator.clipboard.writeText(txt).then(() => {
+        try {
+          await navigator.clipboard.writeText(txt);
           mostrarToast("Plantilla de Ingreso de Técnico copiada al portapapeles", "success");
-        });
+        } catch (err) {
+          mostrarToast("No se pudo copiar la plantilla", "error");
+        }
       }
     }, 250);
   } else {
-    navigator.clipboard.writeText(txt).then(() => {
+    try {
+      await navigator.clipboard.writeText(txt);
       mostrarToast("Plantilla de Ingreso de Técnico copiada al portapapeles", "success");
-    });
+    } catch (err) {
+      mostrarToast("No se pudo copiar la plantilla", "error");
+    }
   }
 }

@@ -1276,7 +1276,7 @@ class RevisorService:
         usuario = datos.get("usuario", "").strip() or "innovex"
         password = datos.get("contrasena", "")
         clave_pc = datos.get("clave_pc") or password or "No configurada"
-        acceso_remoto = datos.get("acceso_remoto", "")
+        acceso_remoto = (datos.get("acceso_remoto") or "OK").strip()
         puerto_ssh = datos.get("puerto_ssh", "").strip() or "22"
         puerto_telnet = datos.get("puerto_telnet", "").strip() or "9999"
 
@@ -1285,12 +1285,23 @@ class RevisorService:
         voltaje_pilas = ""
         errores = []
 
-        if host and password:
+        # El Pancoordinator Telnet no requiere credenciales SSH. Consultarlo
+        # de forma independiente permite completar `cmd status` y `cmd motes`
+        # aunque el usuario deje la contraseña SSH vacía.
+        if host:
             try:
                 antena_status = consultar_telnet(host, puerto_telnet, "cmd status")
+            except Exception as exc:
+                errores.append(f"Telnet status ({host}:{puerto_telnet}): {exc}")
+
+            try:
                 equipos_conectados = consultar_telnet(host, puerto_telnet, "cmd motes")
             except Exception as exc:
-                errores.append(f"Telnet: {exc}")
+                errores.append(f"Telnet motes ({host}:{puerto_telnet}): {exc}")
+
+        # Los voltajes se consultan desde el log por SSH y por ello sí
+        # requieren credenciales. Nunca se reemplazan por datos ficticios.
+        if host and password:
 
             remoto_cmd = (
                 "LOG=$(ls -1t /var/log/cacheton/jenreceiver_*.log /var/log/cacheton.log 2>/dev/null | head -1); "
@@ -1322,41 +1333,14 @@ class RevisorService:
                     ssh_client.close()
 
         if not antena_status.strip():
-            antena_status = (
-                "Pancoordinator status\n"
-                "Version v2.0.2\n"
-                "Microlib version 2fa37f3\n"
-                "MAC: 00:15:8D:00:08:DD:0B:8A\n"
-                "Pan ID: 1313\n"
-                "Channel: 19\n"
-                "N of motes attached: 7\n"
-                "No external EEPROM\n"
-                "CRC program block: 32143\n"
-                "CRC data block: 41792\n"
-                "Last reset normal\n"
-                "Repeater connected 0"
-            )
+            antena_status = "Sin datos: no fue posible obtener cmd status."
         if not equipos_conectados.strip():
-            equipos_conectados = (
-                " 1 00:15:8D:00:08:E4:BF:C5   114:120      12  3\n"
-                "2 00:15:8D:00:08:BA:90:5D   78:84      17  1\n"
-                "3 00:15:8D:00:09:F3:09:96   174:183      22  MALO\n"
-                "4 00:15:8D:00:09:F3:09:E3   57:72      109  4\n"
-                "5 00:15:8D:00:05:69:EA:30   189:189      8  1\n"
-                "6 00:15:8D:00:09:6C:A4:35   198:201      22  2\n"
-                "7 00:15:8D:00:09:24:3D:A4   141:150      18  1"
-            )
+            equipos_conectados = "Sin datos: no fue posible obtener cmd motes."
         if not voltaje_pilas.strip():
-            voltaje_pilas = (
-                ":1786664290:1:0:NODE 0 3.330 4.930 11.0 69 100 6.00 9.00 1 0\n"
-                ":1786664298:1:0:NODE 0 3.310 4.930 13.0 147 56 6.00 9.00 1 0\n"
-                ":1786664068:2:0:NODE 0 3.280 4.930 16.0 201 54 6.00 9.00 1 0\n"
-                ":1786664224:3:0:NODE 0 3.290 4.930 16.0 114 98 6.00 9.00 1 0\n"
-                ":1786664372:4:0:NODE 0 3.320 4.930 14.0 78 76 6.00 9.00 1 0"
-            )
+            voltaje_pilas = "Sin datos: se requieren credenciales SSH para consultar los voltajes."
 
         res = {
-            "dns": host or datos.get("dns") or "ce-yelcho.acuimatic.com",
+            "dns": host or datos.get("dns") or "",
             "usuario": usuario,
             "clave_pc": clave_pc or "No configurada",
             "acceso_remoto": acceso_remoto,
