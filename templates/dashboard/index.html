@@ -8,6 +8,69 @@
     <p class="subtitle">Herramientas y servicios internos para el equipo de Innovex</p>
 </header>
 
+<h2 class="section-title">Bitácora / Pizarra de Turno</h2>
+<div class="card glass-effect" style="margin-bottom: 3rem; padding: 1.5rem; position: relative;">
+    <p style="margin-top: 0; color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.9rem;">
+        📝 Handover rápido para el equipo. <span id="bitacora-status" style="float: right; color: var(--success); font-size: 0.8rem;">Última act: {{ bitacora.actualizado_en|date:"d/m/Y H:i" }}</span>
+    </p>
+    <textarea id="bitacora-texto" class="glass-effect" style="width: 100%; height: 120px; resize: vertical; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: var(--text-primary); padding: 1rem; border-radius: 8px; font-family: monospace;">{{ bitacora.texto }}</textarea>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('bitacora-texto');
+    const statusSpan = document.getElementById('bitacora-status');
+    let timeoutId;
+
+    textarea.addEventListener('input', function() {
+        statusSpan.textContent = 'Escribiendo...';
+        statusSpan.style.color = 'var(--warning)';
+        
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            statusSpan.textContent = 'Guardando...';
+            
+            fetch("{% url 'actualizar_bitacora' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({texto: textarea.value})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'ok') {
+                    statusSpan.textContent = 'Guardado ' + data.actualizado_en;
+                    statusSpan.style.color = 'var(--success)';
+                } else {
+                    statusSpan.textContent = 'Error al guardar';
+                    statusSpan.style.color = '#ef4444';
+                }
+            })
+            .catch(error => {
+                statusSpan.textContent = 'Error de conexión';
+                statusSpan.style.color = '#ef4444';
+            });
+        }, 1000);
+    });
+});
+</script>
+
+<h2 class="section-title">Documentación / Manuales</h2>
+<div class="grid" style="margin-bottom: 3rem;">
+    {% for enlace in enlaces %}
+    <a href="{{ enlace.url }}" target="_blank" class="card glass-effect" style="padding: 1.5rem; display: flex; align-items: center; gap: 1rem;">
+        <div style="font-size: 2rem;">{{ enlace.icono }}</div>
+        <div>
+            <h3 style="margin: 0; font-size: 1.1rem;">{{ enlace.titulo }}</h3>
+        </div>
+    </a>
+    {% empty %}
+    <p style="color: var(--text-secondary);">No hay manuales cargados aún. Agrégalos desde el panel de administración.</p>
+    {% endfor %}
+</div>
+
 <h2 class="section-title">Herramientas Soporte</h2>
 <div class="grid">
     <a href="{% url 'correos_masivos' %}" class="card glass-effect">

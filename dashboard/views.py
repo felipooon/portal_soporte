@@ -3,12 +3,30 @@ from django.contrib import messages
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
-from .models import PersonalSoporte, ClienteCentro
+from django.http import JsonResponse
+from .models import PersonalSoporte, ClienteCentro, Bitacora, EnlaceDocumentacion
+import datetime
+import json
 
 def index(request):
-    return render(request, 'dashboard/index.html')
+    bitacora, created = Bitacora.objects.get_or_create(id=1)
+    enlaces = EnlaceDocumentacion.objects.all()
+    return render(request, 'dashboard/index.html', {
+        'bitacora': bitacora,
+        'enlaces': enlaces
+    })
 
-import datetime
+def actualizar_bitacora(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            bitacora, _ = Bitacora.objects.get_or_create(id=1)
+            bitacora.texto = data.get('texto', '')
+            bitacora.save()
+            return JsonResponse({'status': 'ok', 'actualizado_en': bitacora.actualizado_en.strftime('%d/%m/%Y %H:%M')})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    return JsonResponse({'error': 'Invalid request'}, status=400)
 
 def correos_masivos(request):
     if request.method == 'POST':
