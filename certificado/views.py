@@ -18,16 +18,38 @@ from django.http import HttpResponse
 
 def index(request):
     html = render_to_string('certificado/index.html', request=request)
-    
     # Inyectar la hoja de estilos de unificación visual sin tocar el HTML original
-    css_override = '<link rel="stylesheet" href="/static/css/certificado_override.css">'
+    css_override = '<link rel="stylesheet" id="portal-style-override" href="/static/css/certificado_override.css">'
     html = html.replace('</head>', f'  {css_override}\n</head>')
     
-    # Inyectar dinámicamente el botón de volver al portal para no modificar el HTML original
-    boton_html = '<a href="/" class="btn btn-secondary btn-small">🏠 Volver al Menú</a>'
+    # Inyectar script JS para conmutar el tema
+    js_script = """
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const overrideLink = document.getElementById('portal-style-override');
+        const toggleBtn = document.getElementById('btnTogglePortalTheme');
+        if (overrideLink && toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                if (overrideLink.disabled) {
+                    overrideLink.disabled = false;
+                    toggleBtn.innerText = '🎨 Estilo: Portal';
+                } else {
+                    overrideLink.disabled = true;
+                    toggleBtn.innerText = '🎨 Estilo: Corporativo';
+                }
+            });
+        }
+    });
+    </script>
+    """
+    html = html.replace('</body>', f'  {js_script}\n</body>')
+    
+    # Inyectar dinámicamente el botón de volver al portal y el de cambiar tema
+    boton_volver = '<a href="/" class="btn btn-secondary btn-small">🏠 Volver al Menú</a>'
+    boton_tema = '<button class="btn btn-secondary btn-small" id="btnTogglePortalTheme" title="Cambiar a Estilo Corporativo">🎨 Estilo: Portal</button>'
     html = html.replace(
         '<div class="header-actions">',
-        f'<div class="header-actions">\n      {boton_html}'
+        f'<div class="header-actions">\n      {boton_volver}\n      {boton_tema}'
     )
     return HttpResponse(html)
 
