@@ -7,4 +7,5 @@ urlpatterns = [
     path('certificados/', views.certificados, name='certificados'),
     path('calendario/', views.calendario, name='calendario'),
     path('api/bitacora/actualizar/', views.actualizar_bitacora, name='actualizar_bitacora'),
+    path('api/wiki/buscar/', views.buscar_wiki, name='buscar_wiki'),
 ]

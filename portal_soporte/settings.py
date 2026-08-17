@@ -38,6 +38,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['10.9.30.178', 'localhost', '127.0.0.1', '*']
 
+# Credenciales de TRAC (Cargadas desde .env)
+TRAC_USER = os.environ.get('TRAC_USER', '')
+TRAC_PASSWORD = os.environ.get('TRAC_PASSWORD', '')
 
 # Application definition
 

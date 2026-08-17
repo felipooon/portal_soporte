@@ -4,9 +4,12 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.http import JsonResponse
+from django.conf import settings
 from .models import PersonalSoporte, ClienteCentro, Bitacora
 import datetime
 import json
+import requests
+from bs4 import BeautifulSoup
 
 def index(request):
     bitacora, created = Bitacora.objects.get_or_create(id=1)
@@ -25,6 +28,46 @@ def actualizar_bitacora(request):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+def buscar_wiki(request):
+    query = request.GET.get('q', '')
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+    
+    url = f"https://intranet.innovex.cl/operaciones/search?q={query}&wiki=on"
+    auth = (settings.TRAC_USER, settings.TRAC_PASSWORD)
+    
+    try:
+        # Ignore SSL just in case the internal cert is invalid
+        response = requests.get(url, auth=auth, timeout=5, verify=False)
+        if response.status_code != 200:
+            return JsonResponse({'error': 'Trac auth or connection failed'}, status=500)
+            
+        soup = BeautifulSoup(response.content, 'html.parser')
+        results = []
+        
+        # Trac search results are usually in <dl id="results">
+        dl = soup.find('dl', id='results')
+        if dl:
+            for dt, dd in zip(dl.find_all('dt'), dl.find_all('dd')):
+                a_tag = dt.find('a')
+                if a_tag:
+                    title = a_tag.text.strip()
+                    # Trac links are relative to the root, ensure absolute URL
+                    href = a_tag.get('href', '')
+                    if href.startswith('/'):
+                        link = f"https://intranet.innovex.cl{href}"
+                    else:
+                        link = href
+                    snippet = dd.text.strip()
+                    results.append({
+                        'title': title,
+                        'link': link,
+                        'snippet': snippet
+                    })
+        return JsonResponse({'results': results})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 def correos_masivos(request):
     if request.method == 'POST':
