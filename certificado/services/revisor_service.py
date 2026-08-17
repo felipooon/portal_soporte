@@ -212,7 +212,7 @@ def obtener_logo_base64() -> str:
     """
     Retorna la imagen logo_innovex.png de la carpeta assets codificada en Base64 Data URI.
     """
-    path_logo = Path(__file__).resolve().parent.parent / "static" / "certificado" / "logo.png"
+    path_logo = Path(__file__).resolve().parent.parent.parent / "assets" / "logo_innovex.png"
     if path_logo.exists():
         try:
             with open(path_logo, "rb") as f:
@@ -944,9 +944,9 @@ class RevisorService:
         """
         Realiza la consulta remota vía SSH y Telnet al computador del centro.
         """
-        host = datos.get("host", "").strip()
+        host = datos.get("host", "").strip() or datos.get("dns", "").strip()
         usuario = datos.get("usuario", "").strip() or "innovex"
-        password = datos.get("contrasena", "")
+        password = datos.get("contrasena", "").strip() or datos.get("clave", "").strip()
         puerto_ssh = datos.get("puerto_ssh", "").strip() or "22"
         puerto_telnet = datos.get("puerto_telnet", "").strip() or "9999"
 
@@ -955,13 +955,28 @@ class RevisorService:
         log_cacheton = ""
         errores = []
 
-        if host and password:
+        # Telnet es independiente de SSH: el servidor del pancoordinator puede
+        # consultarse incluso cuando no se dispone de credenciales SSH.
+        # Mantener ambas conexiones dentro del mismo condicional hacía que el
+        # autollenado del certificado nunca leyera localhost:<puerto> si la
+        # contraseña SSH se dejaba vacía.
+        status_telnet = ""
+        motes_telnet = ""
+        if host:
             try:
-                status = consultar_telnet(host, puerto_telnet, "cmd status")
-                motes_texto = consultar_telnet(host, puerto_telnet, "cmd motes")
+                status_telnet = consultar_telnet(host, puerto_telnet, "cmd status")
             except Exception as exc:
-                errores.append(f"Telnet ({host}:{puerto_telnet}): {exc}")
+                errores.append(f"Telnet status ({host}:{puerto_telnet}): {exc}")
 
+            try:
+                motes_telnet = consultar_telnet(host, puerto_telnet, "cmd motes")
+            except Exception as exc:
+                errores.append(f"Telnet motes ({host}:{puerto_telnet}): {exc}")
+
+        status = status_telnet
+        motes_texto = motes_telnet
+
+        if host and password:
             remoto_cmd = (
                 "echo '=== SO & KERNEL ==='; uname -a; "
                 "echo '=== VERSION EQUIPOS ==='; cat /var/log/cacheton.log 2>/dev/null | grep -i 'version' | tail -1 || true; "
@@ -969,22 +984,32 @@ class RevisorService:
                 "test -n \"$LOG\" && grep -E ':NODE|NODE ' \"$LOG\" | tail -15 || true; "
                 "echo '=== PAQUETERIA ==='; dpkg -l pcinnovex cacheton python3 2>/dev/null | grep -E 'pcinnovex|cacheton|python3' || true"
             )
-            comando = [
-                "sshpass", "-e", "ssh", "-p", puerto_ssh,
-                "-o", "ConnectTimeout=8", "-o", "StrictHostKeyChecking=accept-new",
-                f"{usuario}@{host}", remoto_cmd
-            ]
-            entorno = os.environ.copy()
-            entorno["SSHPASS"] = password
-
+            ssh_rev = None
             try:
-                proceso = subprocess.run(comando, capture_output=True, text=True, timeout=15, env=entorno)
-                if proceso.stdout:
-                    log_cacheton = proceso.stdout
-                if proceso.stderr and "Permission denied" in proceso.stderr:
-                    errores.append("SSH: Contraseña incorrecta o permiso denegado.")
+                # Paramiko es opcional para que la consulta Telnet no dependa
+                # de una librería SSH instalada.
+                import paramiko
+
+                ssh_rev = paramiko.SSHClient()
+                ssh_rev.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                ssh_rev.connect(
+                    hostname=host,
+                    port=int(puerto_ssh),
+                    username=usuario,
+                    password=password,
+                    timeout=10,
+                    look_for_keys=False,
+                    allow_agent=False
+                )
+                _in, _out, _err = ssh_rev.exec_command(remoto_cmd, timeout=12)
+                res_out = _out.read().decode("utf-8", errors="replace")
+                if res_out:
+                    log_cacheton = res_out
             except Exception as exc:
                 errores.append(f"SSH ({host}): {exc}")
+            finally:
+                if ssh_rev is not None:
+                    ssh_rev.close()
 
         if not status:
             status = (
@@ -1115,6 +1140,12 @@ class RevisorService:
             "nodos_detalle": nodos_detalle,
             "motes_texto_raw": motes_texto,
             "salida_status": status,
+            # Las claves *_raw son el contrato del autollenado del
+            # certificado. Se preservan sin valores de demostración para no
+            # llenar una ficha con datos ficticios cuando Telnet falla.
+            "status_raw": status_telnet,
+            "motes_raw": motes_telnet,
+            "log_cacheton_raw": log_cacheton,
             "error": " | ".join(errores) if errores else ""
         }
 
@@ -1195,7 +1226,7 @@ class RevisorService:
             f"DNS:{dns_host}\n"
             f"Clave PC:{clave_pc}\n"
             f"Acceso remoto: {acceso_remoto}\n\n"
-            f"Antena status:\n{antena_status.strip()}\n \n"
+            f"Antena status:\n{antena_status.strip()}\n\n"
             f"Equipos conectados:\n{equipos_conectados.strip()}\n\n"
             f"Voltaje pilas:\n{voltaje_pilas.strip()}\n\n"
             f"Observaciones:\n\n{obs_ind}\n\n"
@@ -1204,7 +1235,40 @@ class RevisorService:
         return plantilla
 
     @staticmethod
-    def consultar_ingreso_tecnico_remoto(datos: dict) -> dict:
+    def ejecutar_ssh_autofill(datos: dict) -> str:
+        """
+        Consulta la máquina remota imitando exactamente la funcionalidad del Módulo 2 (Revisor)
+        y devuelve la salida formateada en texto plano para auto-rellenar el certificado.
+        """
+        host = datos.get("host", "").strip() or datos.get("dns", "").strip()
+        if not host:
+            raise ValueError("Debe ingresar la IP o DNS del equipo remoto.")
+
+        # Reutilizar el motor de consulta remota unificado del Módulo 2
+        res_revisor = RevisorService.consultar_remotamente(datos)
+
+        salida_consolidada = []
+        status_raw = res_revisor.get("status_raw", "")
+        motes_raw = res_revisor.get("motes_raw", "")
+        log_raw = res_revisor.get("log_cacheton_raw", "")
+
+        if status_raw:
+            salida_consolidada.append(f"=== PANCOORDINATOR STATUS ===\n{status_raw}")
+        if motes_raw:
+            salida_consolidada.append(f"=== PANCOORDINATOR MOTES ===\n{motes_raw}")
+        if log_raw:
+            salida_consolidada.append(f"=== CACHETON LOG & DIAGNOSTICOS ===\n{log_raw}")
+
+        resultado = "\n\n".join(salida_consolidada)
+        if not resultado:
+            detalle = res_revisor.get("error", "")
+            mensaje = f"No se pudo consultar la información del equipo {host}."
+            raise RuntimeError(f"{mensaje} {detalle}".strip())
+
+        return resultado
+
+    @classmethod
+    def consultar_ingreso_tecnico_remoto(cls, datos: dict) -> dict:
         """
         Consulta remota vía SSH/Telnet o genera datos para Información de Ingreso de Técnico.
         """
@@ -1232,19 +1296,30 @@ class RevisorService:
                 "LOG=$(ls -1t /var/log/cacheton/jenreceiver_*.log /var/log/cacheton.log 2>/dev/null | head -1); "
                 "test -n \"$LOG\" && grep -E ':NODE|NODE ' \"$LOG\" | tail -10 || true"
             )
-            comando = [
-                "sshpass", "-e", "ssh", "-p", puerto_ssh,
-                "-o", "ConnectTimeout=8", "-o", "StrictHostKeyChecking=accept-new",
-                f"{usuario}@{host}", remoto_cmd
-            ]
-            entorno = os.environ.copy()
-            entorno["SSHPASS"] = password
+            ssh_client = None
             try:
-                proceso = subprocess.run(comando, capture_output=True, text=True, timeout=15, env=entorno)
-                if proceso.stdout and proceso.stdout.strip():
-                    voltaje_pilas = proceso.stdout.strip()
+                import paramiko
+
+                ssh_client = paramiko.SSHClient()
+                ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                ssh_client.connect(
+                    hostname=host,
+                    port=int(puerto_ssh),
+                    username=usuario,
+                    password=password,
+                    timeout=10,
+                    look_for_keys=False,
+                    allow_agent=False
+                )
+                _stdin, _stdout, _stderr = ssh_client.exec_command(remoto_cmd, timeout=12)
+                resultado_ssh = _stdout.read().decode("utf-8", errors="replace").strip()
+                if resultado_ssh:
+                    voltaje_pilas = resultado_ssh
             except Exception as exc:
                 errores.append(f"SSH: {exc}")
+            finally:
+                if ssh_client is not None:
+                    ssh_client.close()
 
         if not antena_status.strip():
             antena_status = (

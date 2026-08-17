@@ -118,7 +118,7 @@ class NumberedCanvas(canvas.Canvas):
 
         page_num = getattr(self, "_pageNumber", 1)  # pyrefly: ignore [missing-attribute]
         labels = [
-            ("Registro", self.codigo_registro),
+            ("N° Ficha", self.codigo_registro),
             ("Periodo", "2026"),
             ("Páginas", f"{page_num} de {page_count}")
         ]

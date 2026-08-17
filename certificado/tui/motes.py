@@ -13,28 +13,44 @@ from .ui import (
 
 
 def parse_cmd_motes(texto: str) -> list[dict]:
-    """Parsea la salida de texto plano del comando 'cmd motes' / 'cmd status'."""
+    """Parsea la salida de texto plano del comando 'cmd motes' / 'cmd status' / logs."""
     import re
     motes = []
+    macs_vistas = set()
+
     lineas = texto.strip().splitlines()
     for linea in lineas:
         linea_str = linea.strip()
         if not linea_str:
             continue
-        # Omitir encabezado si aparece
+
+        # Encabezados de tabla
         if "mote" in linea_str.lower() and "mac" in linea_str.lower() and "signal" in linea_str.lower():
             continue
 
-        # Formato estándar de consola: 1 00:15:8D:00:09:24:53:F7 -75dBm 2s 9
         partes = linea_str.split()
-        if len(partes) >= 4 and partes[0].isdigit():
-            mac_cand = partes[1]
-            if ":" in mac_cand or len(mac_cand) >= 8:
-                mote = partes[0]
-                mac = mac_cand.upper()
-                signal = partes[2]
-                last_rx = partes[3]
-                name = partes[4] if len(partes) >= 5 else ""
+        if len(partes) >= 3:
+            # Buscar la posición de la MAC en las partes de la línea
+            mac_idx = -1
+            for i, p in enumerate(partes):
+                p_clean = p.strip(",;()[]")
+                if re.match(r"^00:15:8[dD]:[0-9a-fA-F:]{11}$", p_clean) or (":" in p_clean and len(p_clean) == 23):
+                    mac_idx = i
+                    break
+                elif re.match(r"^[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){7}$", p_clean):
+                    mac_idx = i
+                    break
+
+            if mac_idx != -1:
+                mac = partes[mac_idx].strip(",;()[]").upper()
+                if mac in macs_vistas:
+                    continue
+                macs_vistas.add(mac)
+
+                mote = partes[mac_idx - 1] if mac_idx > 0 and partes[mac_idx - 1].isdigit() else str(len(motes) + 1)
+                signal = partes[mac_idx + 1] if len(partes) > mac_idx + 1 else "N/D"
+                last_rx = partes[mac_idx + 2] if len(partes) > mac_idx + 2 else "N/D"
+                name = partes[mac_idx + 3] if len(partes) > mac_idx + 3 else ""
 
                 if name.isdigit():
                     asociacion = f"Equipo {name}"
@@ -53,31 +69,22 @@ def parse_cmd_motes(texto: str) -> list[dict]:
                 })
                 continue
 
-        # Regex alternativo para formatos con prefijos (Mote 1: 00:15:8D:...)
-        match = re.search(r"(?:mote\s*#?\s*)?(\d+)\s+([0-9a-fA-F:]{11,17})\s+([-\d]+dBm)?\s*([0-9]+s)?\s*(.*)", linea_str, re.IGNORECASE)
-        if match:
-            mote = match.group(1)
-            mac = match.group(2).upper()
-            signal = match.group(3) or "-"
-            last_rx = match.group(4) or "-"
-            name = match.group(5).strip() if match.group(5) else ""
-
-            if name.isdigit():
-                asociacion = f"Equipo {name}"
-            elif name:
-                asociacion = name
-            else:
-                asociacion = f"Equipo {mote}"
-
-            if not any(m["mac"].upper() == mac for m in motes):
+        # Regex fallback para cualquier MAC Jennic encontrada en la línea
+        matches_mac = re.findall(r"(00:15:8[dD]:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2})", linea_str, re.IGNORECASE)
+        for mac_found in matches_mac:
+            mac_u = mac_found.upper()
+            if mac_u not in macs_vistas:
+                macs_vistas.add(mac_u)
+                mote_num = str(len(motes) + 1)
                 motes.append({
-                    "mote": mote,
-                    "mac": mac,
-                    "signal": signal,
-                    "last_rx": last_rx,
-                    "name": name,
-                    "asociacion": asociacion
+                    "mote": mote_num,
+                    "mac": mac_u,
+                    "signal": "N/D",
+                    "last_rx": "N/D",
+                    "name": "",
+                    "asociacion": f"Equipo {mote_num}"
                 })
+
     return motes
 
 

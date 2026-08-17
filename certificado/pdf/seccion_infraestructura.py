@@ -13,10 +13,13 @@ def agregar_infraestructura(pdf, datos, y, certificado=None):
     ip_vpn = datos.get("ip_vpn") or acceso.get("tun0") or act.get("vpn_tun0") or "-"
 
     filas = [
+        ("Área", datos.get("area", "-")),
         ("Tipo PC", datos.get("categoria", "Notebook")),
         ("Marca / Modelo", f"{datos.get('marca', '')} {datos.get('modelo', '')}".strip() or "-"),
-        ("Sistema operativo", datos.get("sistema_operativo", "-")),
+        ("Sistema Operativo", datos.get("sistema_operativo") or datos.get("so") or "-"),
+        ("Kernel", datos.get("kernel", "-")),
         ("MAC Ethernet", datos.get("mac_ethernet", "-")),
+        ("MAC Wi-Fi", datos.get("mac_wifi", "-")),
         ("ID Equipo / PC", datos.get("pc_id", "-")),
         ("Contraseña PC", datos.get("pc_password", "-")),
         ("Tipo de Conexión IP", tipo_ip)

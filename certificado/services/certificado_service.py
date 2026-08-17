@@ -146,7 +146,39 @@ class CertificadoService:
                 ensure_ascii=False
             )
 
+        # Autolimpiar almacenamiento para mantener únicamente los últimos 3 certificados
+        CertificadoService.rotar_certificados_max_3(año, max_guardados=3)
+
         return archivo_json
+
+    @staticmethod
+    def rotar_certificados_max_3(año: int = 2026, max_guardados: int = 3) -> None:
+        """
+        Mantiene como máximo los últimos `max_guardados` (3) certificados creados/guardados,
+        eliminando las carpetas de certificados más antiguas.
+        """
+        import shutil
+        dir_año = BASE_STORAGE / str(año)
+        if not dir_año.exists():
+            return
+
+        carpetas = []
+        for p in dir_año.iterdir():
+            if p.is_dir():
+                json_path = p / "certificado.json"
+                mtime = json_path.stat().st_mtime if json_path.exists() else p.stat().st_mtime
+                carpetas.append((mtime, p))
+
+        # Ordenar de más reciente a más antiguo
+        carpetas.sort(key=lambda x: x[0], reverse=True)
+
+        # Eliminar carpetas que excedan el límite de 3
+        if len(carpetas) > max_guardados:
+            for _, carpeta in carpetas[max_guardados:]:
+                try:
+                    shutil.rmtree(carpeta)
+                except Exception as exc:
+                    print(f"Error al rotar certificado antiguo {carpeta}: {exc}")
 
     @staticmethod
     def obtener_carpeta_entrada() -> Path:

@@ -7,8 +7,8 @@ from .plantilla import (
 def agregar_equipos_instalados(pdf, ubicaciones, repuestos, y, certificado=None):
     y = dibujar_titulo_seccion(pdf, MARGEN_X, y, "4. Equipos instalados por ubicación")
 
-    cabeceras_eq = ["N°", "Tipo de elemento", "Metraje", "MAC / N° de serie"]
-    anchos_eq = [0.08, 0.42, 0.20, 0.30]
+    cabeceras_eq = ["N°", "Equipo / Elemento", "Identificación (MAC / S/N)", "Sensores Asociados (Tipo — Metros)"]
+    anchos_eq = [0.08, 0.32, 0.28, 0.32]
 
     if not ubicaciones:
         filas_vacias = [["1", "Sin ubicaciones registradas", "-", "-"]]
@@ -35,20 +35,49 @@ def agregar_equipos_instalados(pdf, ubicaciones, repuestos, y, certificado=None)
             for idx, elem in enumerate(elementos, start=1):
                 if isinstance(elem, dict):
                     tipo = elem.get("tipo", "") or elem.get("descripcion", "") or "-"
-                    metraje = elem.get("metraje", "")
-                    prof = f"{metraje} m" if metraje else "-"
+                    nombre_eq = elem.get("nombre", "") or elem.get("name", "")
+                    label_eq = f"{nombre_eq} ({tipo})" if nombre_eq and tipo != "-" else tipo
                     mac_s = elem.get("mac", "") or elem.get("numero_serie") or elem.get("serie", "") or "-"
+                    sensores = elem.get("sensores", [])
+                    metraje_legacy = elem.get("metraje", "")
                 else:
                     tipo = getattr(elem, "tipo", "") or getattr(elem, "descripcion", "") or "-"
-                    metraje = getattr(elem, "metraje", "") or ""
-                    prof = f"{metraje} m" if metraje else "-"
+                    nombre_eq = getattr(elem, "nombre", "") or getattr(elem, "name", "")
+                    label_eq = f"{nombre_eq} ({tipo})" if nombre_eq and tipo != "-" else tipo
                     mac_s = getattr(elem, "mac", "") or getattr(elem, "numero_serie", "") or getattr(elem, "serie", "") or "-"
+                    sensores = getattr(elem, "sensores", []) or []
+                    metraje_legacy = getattr(elem, "metraje", "") or ""
+
+                if sensores:
+                    def m_key(s):
+                        try:
+                            m_val = str(s.get("metros", "") if isinstance(s, dict) else getattr(s, "metros", "")).replace("m", "").strip()
+                            return float(m_val) if m_val else 0.0
+                        except Exception:
+                            return 0.0
+
+                    sensores_ord = sorted(sensores, key=m_key)
+                    sensores_str_list = []
+                    for s in sensores_ord:
+                        if isinstance(s, dict):
+                            t_s = s.get("tipo_sensor") or s.get("tipo") or "Sensor"
+                            m_s = s.get("metros", "")
+                        else:
+                            t_s = getattr(s, "tipo_sensor", "") or getattr(s, "tipo", "Sensor")
+                            m_s = getattr(s, "metros", "")
+                        m_lbl = f" ({m_s}m)" if m_s else ""
+                        sensores_str_list.append(f"{t_s}{m_lbl}")
+                    sensores_str = "\n".join(sensores_str_list)
+                elif metraje_legacy:
+                    sensores_str = f"Metros: {metraje_legacy}m"
+                else:
+                    sensores_str = "-"
 
                 filas_loc.append([
                     str(idx),
-                    tipo,
-                    prof,
-                    mac_s
+                    label_eq,
+                    mac_s,
+                    sensores_str
                 ])
 
             if not filas_loc:

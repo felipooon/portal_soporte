@@ -5,18 +5,50 @@ from certificado.constants.empresas import parse_location_info
 
 
 def parse_cmd_status(texto: str) -> dict:
-    """Extrae datos de la antena a partir de la salida de 'cmd status'."""
+    """Extrae datos de la antena a partir de la salida de 'cmd status' o 'pancoordinator status'."""
     res = {}
     for line in texto.splitlines():
-        line = line.strip()
-        if line.lower().startswith("version"):
-            partes = line.split(maxsplit=1)
-            if len(partes) > 1:
+        line_s = line.strip()
+        # Versión de Firmware / Pancoordinator
+        if line_s.lower().startswith("version"):
+            partes = line_s.split(maxsplit=1)
+            if len(partes) > 1 and not partes[1].lower().startswith("mote") and not partes[1].lower().startswith("microlib"):
                 res["version"] = partes[1].strip()
-        elif line.lower().startswith("mac:"):
-            res["mac"] = line.split(":", 1)[1].strip()
-        elif line.lower().startswith("pan id:"):
-            res["panid"] = line.split(":", 1)[1].strip()
+        elif "firmware version" in line_s.lower():
+            res["version"] = line_s.split(":", 1)[1].strip()
+
+        # MAC
+        if "mac:" in line_s.lower():
+            res["mac"] = line_s.split(":", 1)[1].strip()
+
+        # Pan ID
+        if "pan id:" in line_s.lower():
+            res["panid"] = line_s.split(":", 1)[1].strip()
+
+        # Cantidad de motes / equipos asociados
+        m_att = re.search(r"(?:N\s+of\s+motes\s+attached|motes\s+attached|equipos\s+asociados)\s*:\s*(\d+)", line_s, re.IGNORECASE)
+        if m_att:
+            res["cantidad_equipos_asociados"] = m_att.group(1)
+
+    return res
+
+
+def parse_kernel(texto: str) -> dict:
+    """Extrae la versión del Kernel desde uname -r / uname -a / hostnamectl."""
+    res = {}
+    for line in texto.splitlines():
+        line_strip = line.strip()
+        if "kernel:" in line_strip.lower():
+            res["kernel"] = line_strip.split(":", 1)[1].strip()
+            return res
+        m_uname = re.search(r"Linux\s+[a-zA-Z0-9._-]+\s+([0-9]+\.[0-9]+\.[0-9]+[^\s]*)", line_strip)
+        if m_uname:
+            res["kernel"] = m_uname.group(1)
+            return res
+        m_ver = re.search(r"^([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-(?:generic|lowlatency|aws|azure|gcp))", line_strip)
+        if m_ver:
+            res["kernel"] = m_ver.group(1)
+            return res
     return res
 
 
@@ -175,6 +207,18 @@ def procesar_autofill(certificado: dict, texto_pegado: str) -> dict:
         if "panid" in datos_status:
             mon["panid"] = datos_status["panid"]
             resumen.append(f"Monitoreo Abiótico -> Pan ID: {datos_status['panid']}")
+
+        if "cantidad_equipos_asociados" in datos_status:
+            mon["cantidad_equipos_asociados"] = datos_status["cantidad_equipos_asociados"]
+            resumen.append(f"Monitoreo Abiótico -> Equipos Asociados: {datos_status['cantidad_equipos_asociados']}")
+
+    # 1b. Kernel -> Infraestructura
+    datos_kernel = parse_kernel(texto_pegado)
+    if datos_kernel and "kernel" in datos_kernel:
+        if "infraestructura" not in certificado:
+            certificado["infraestructura"] = {}
+        certificado["infraestructura"]["kernel"] = datos_kernel["kernel"]
+        resumen.append(f"Infraestructura -> Kernel: {datos_kernel['kernel']}")
 
     # 2. ifconfig -> Infraestructura, Acceso Remoto, Activación
     datos_ifconfig = parse_ifconfig(texto_pegado)
