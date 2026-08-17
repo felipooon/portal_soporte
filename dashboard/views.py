@@ -45,12 +45,19 @@ def correos_masivos(request):
                 with open('test_correo_generado.html', 'w', encoding='utf-8') as f:
                     f.write(html_content)
             
+            nombre_parts = personal.nombre.lower().split()
+            if len(nombre_parts) >= 2:
+                correo_remitente = f"{nombre_parts[0]}.{nombre_parts[1]}@innovex.cl"
+            else:
+                correo_remitente = f"{nombre_parts[0]}@innovex.cl"
+            
             # Use EmailMultiAlternatives for HTML emails
             msg = EmailMultiAlternatives(
                 subject=subject,
                 body=text_content,
-                from_email=personal.correo,
+                from_email=correo_remitente,
                 to=[cliente.correo],
+                reply_to=[correo_remitente],
             )
             msg.attach_alternative(html_content, "text/html")
             msg.send()
