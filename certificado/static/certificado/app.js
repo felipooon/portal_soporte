@@ -74,10 +74,18 @@ function parseLocationInfo(loc) {
 
   return { empresa: empresa, nombre_centro: nombre_centro };
 }
-const TIPOS_ELEMENTOS = [
-  "Oxi-Sal", "Corriente", "Turbidez", "Clorofila", "pH",
-  "ADCP", "Cámara", "Estación Meteorológica", "Antena", "Notebook", "Otro"
+const TIPOS_EQUIPOS = [
+  "Jennic simple", "Jennic doble", "Notebook", "Cámara", "Antena", "Estación Meteorológica", "Otro"
 ];
+
+const TIPOS_SENSORES = [
+  "Sensor Oxígeno - T°c", "Sensor Conductividad", "Sensor Oxígeno - Conductividad - T°c",
+  "Sensor Sulfuro", "Sensor Redox", "Sensor pH", "Sensor Profundidad",
+  "Sensor Nivel de Agua", "Sensor Salinidad", "Sensor Temperatura",
+  "Sensor Corriente", "Sensor Turbidez", "Sensor Clorofila", "Sensor ADCP", "Otro"
+];
+
+const TIPOS_ELEMENTOS = TIPOS_EQUIPOS;
 
 const RESPONSABLES_ACTIVACION = [
   "Hector Portillo",
@@ -211,8 +219,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   document.getElementById("btnProcesarAutofill").addEventListener("click", procesarAutofill);
+  document.getElementById("btnEjecutarSSHAutofill")?.addEventListener("click", ejecutarSSHAutofill);
+  document.getElementById("btnCopiarComandoAutofill")?.addEventListener("click", copiarComandoPortapapeles);
   document.getElementById("btnGuardar").addEventListener("click", guardarAvance);
   document.getElementById("btnGenerarPDF").addEventListener("click", compilarYMostrarPDF);
+  setupNavButtons();
 
 
   // Revisor & Verificación de Ingreso
@@ -268,8 +279,8 @@ document.addEventListener("DOMContentLoaded", () => {
   inputsIngreso.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-      el.addEventListener("input", () => generarPlantillaIngreso());
-      el.addEventListener("change", () => generarPlantillaIngreso());
+      el.addEventListener("input", () => generarPlantillaIngreso(true));
+      el.addEventListener("change", () => generarPlantillaIngreso(true));
     }
   });
 
@@ -459,7 +470,7 @@ function crearNuevoCertificadoSinPopup() {
   const locInput = document.getElementById("gen_location");
   if (locInput) locInput.focus();
 
-  mostrarToast("✨ Nuevo certificado limpio iniciado. Complete Location ID y Nombre del Centro.", "info");
+  mostrarToast("Nuevo certificado limpio iniciado. Complete Location ID y Nombre del Centro.", "info");
 }
 
 // Toast Notifications
@@ -600,6 +611,18 @@ function activarSeccionTab(targetTab) {
   if (targetEl) {
     targetEl.classList.add("active");
   }
+
+  // Sincronizar estado activo de los botones tab
+  document.querySelectorAll(".tab-btn").forEach(t => {
+    if (t.dataset.tab === targetTab) t.classList.add("active");
+    else t.classList.remove("active");
+  });
+
+  // Re-renderizar listas al navegar para garantizar visualización inmediata
+  try { renderMotesList(); } catch(e) {}
+  try { renderUbicacionesList(); } catch(e) {}
+  try { renderRepuestosList(); } catch(e) {}
+  try { renderRepuestosMotesDropdown(); } catch(e) {}
 
   if (targetTab === "ingreso_tecnico") {
     prellenarDatosHostIngresoTecnico();
@@ -746,13 +769,17 @@ function bindFormInputs() {
     { id: "gen_barrio", sec: "datos_generales", key: "barrio" },
     { id: "gen_puerto_patron", sec: "datos_generales", key: "puerto_patron" },
     { id: "gen_correo_centro", sec: "datos_generales", key: "correo_centro" },
+    { id: "gen_area", sec: "datos_generales", key: "area" },
     { id: "gen_telefono_centro", sec: "datos_generales", key: "telefono_centro" },
 
+    { id: "infra_area", sec: "infraestructura", key: "area" },
     { id: "infra_categoria", sec: "infraestructura", key: "categoria" },
     { id: "infra_marca", sec: "infraestructura", key: "marca" },
     { id: "infra_modelo", sec: "infraestructura", key: "modelo" },
     { id: "infra_so_select", sec: "infraestructura", key: "sistema_operativo" },
+    { id: "infra_kernel", sec: "infraestructura", key: "kernel" },
     { id: "infra_mac_ethernet", sec: "infraestructura", key: "mac_ethernet" },
+    { id: "infra_mac_wifi", sec: "infraestructura", key: "mac_wifi" },
     { id: "infra_pc_id", sec: "infraestructura", key: "pc_id" },
     { id: "infra_pc_password", sec: "infraestructura", key: "pc_password" },
     { id: "infra_tipo_ip", sec: "infraestructura", key: "tipo_ip" },
@@ -766,12 +793,15 @@ function bindFormInputs() {
 
     { id: "cam_instalada", sec: "estacion_camara", key: "camara_instalada" },
     { id: "cam_modelo_camara", sec: "estacion_camara", key: "modelo_camara" },
+    { id: "cam_mac_camara", sec: "estacion_camara", key: "mac_camara" },
     { id: "cam_conexion_camara", sec: "estacion_camara", key: "conexion_camara" },
     { id: "cam_ip_fija_camara", sec: "estacion_camara", key: "ip_fija_camara" },
     { id: "cam_ubicacion_camara", sec: "estacion_camara", key: "ubicacion_camara" },
 
     { id: "cam_estacion_instalada", sec: "estacion_camara", key: "estacion_instalada" },
     { id: "cam_modelo_estacion", sec: "estacion_camara", key: "modelo_estacion" },
+    { id: "cam_id_estacion", sec: "estacion_camara", key: "id_estacion_meteorologica" },
+    { id: "cam_altura_estacion", sec: "estacion_camara", key: "altura_estacion" },
     { id: "cam_region_davis", sec: "estacion_camara", key: "region_davis" },
     { id: "cam_ubicacion_estacion", sec: "estacion_camara", key: "ubicacion_estacion" },
 
@@ -785,6 +815,7 @@ function bindFormInputs() {
     { id: "ab_version", sec: "monitoreo_abiotico", key: "version" },
     { id: "ab_mac", sec: "monitoreo_abiotico", key: "mac" },
     { id: "ab_panid", sec: "monitoreo_abiotico", key: "panid" },
+    { id: "ab_cantidad_equipos_asociados", sec: "monitoreo_abiotico", key: "cantidad_equipos_asociados" },
 
     { id: "act_ip_final", sec: "activacion", key: "ip_final" },
     { id: "act_interfaz", sec: "activacion", key: "interfaz" },
@@ -847,13 +878,20 @@ function bindFormInputs() {
     }
   });
 
-  const idsVisibilidad = ["cam_estacion_instalada", "cam_modelo_estacion", "cam_instalada", "cam_conexion_camara", "infra_tipo_ip"];
+  const idsVisibilidad = ["cam_estacion_instalada", "cam_modelo_estacion", "cam_instalada", "cam_conexion_camara", "infra_tipo_ip", "ab_instalado"];
   idsVisibilidad.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.addEventListener("change", () => {
         actualizarVisibilidadCamaraEstacion();
         actualizarVisibilidadConectividadIP();
+        // Toggle abiotic fields container
+        if (id === "ab_instalado") {
+          const containerAb = document.getElementById("abiotico_fields_container");
+          if (containerAb) {
+            containerAb.style.display = el.value === "No" ? "none" : "block";
+          }
+        }
         renderLiveHtmlSheet();
       });
     }
@@ -874,11 +912,15 @@ function actualizarVisibilidadCamaraEstacion() {
   const estInst = document.getElementById("cam_estacion_instalada")?.value;
   const modeloEst = document.getElementById("cam_modelo_estacion")?.value;
   const grpModeloEst = document.getElementById("group_modelo_estacion");
+  const grpIdEst = document.getElementById("group_id_estacion");
+  const grpAlturaEst = document.getElementById("group_altura_estacion");
   const grpRegionDavis = document.getElementById("group_region_davis");
   const grpUbicEst = document.getElementById("group_ubicacion_estacion");
 
   if (estInst === "Si") {
     if (grpModeloEst) grpModeloEst.style.display = "flex";
+    if (grpIdEst) grpIdEst.style.display = "flex";
+    if (grpAlturaEst) grpAlturaEst.style.display = "flex";
     if (grpUbicEst) grpUbicEst.style.display = "flex";
     if (modeloEst === "Davis") {
       if (grpRegionDavis) grpRegionDavis.style.display = "flex";
@@ -887,6 +929,8 @@ function actualizarVisibilidadCamaraEstacion() {
     }
   } else {
     if (grpModeloEst) grpModeloEst.style.display = "none";
+    if (grpIdEst) grpIdEst.style.display = "none";
+    if (grpAlturaEst) grpAlturaEst.style.display = "none";
     if (grpRegionDavis) grpRegionDavis.style.display = "none";
     if (grpUbicEst) grpUbicEst.style.display = "none";
   }
@@ -894,6 +938,7 @@ function actualizarVisibilidadCamaraEstacion() {
   const camInst = document.getElementById("cam_instalada")?.value;
   const conexionCam = document.getElementById("cam_conexion_camara")?.value;
   const grpModCam = document.getElementById("group_modelo_camara");
+  const grpMacCam = document.getElementById("group_mac_camara");
   const grpConCam = document.getElementById("group_conexion_camara");
   const grpIpCam = document.getElementById("group_ip_camara");
   const grpUbicCam = document.getElementById("group_ubicacion_camara");
@@ -901,6 +946,7 @@ function actualizarVisibilidadCamaraEstacion() {
 
   if (camInst === "Si") {
     if (grpModCam) grpModCam.style.display = "flex";
+    if (grpMacCam) grpMacCam.style.display = "flex";
     if (grpConCam) grpConCam.style.display = "flex";
     if (grpIpCam) grpIpCam.style.display = "flex";
     if (grpUbicCam) grpUbicCam.style.display = "flex";
@@ -916,6 +962,7 @@ function actualizarVisibilidadCamaraEstacion() {
     }
   } else {
     if (grpModCam) grpModCam.style.display = "none";
+    if (grpMacCam) grpMacCam.style.display = "none";
     if (grpConCam) grpConCam.style.display = "none";
     if (grpIpCam) grpIpCam.style.display = "none";
     if (grpUbicCam) grpUbicCam.style.display = "none";
@@ -963,14 +1010,18 @@ function poblarFormularioDesdeState() {
   setVal("gen_barrio", dg.barrio);
   setVal("gen_puerto_patron", dg.puerto_patron);
   setVal("gen_correo_centro", dg.correo_centro);
+  setVal("gen_area", dg.area || "");
   setVal("gen_telefono_centro", dg.telefono_centro || dg.numero_centro || "");
 
   const inf = certificadoState.infraestructura || {};
+  setVal("infra_area", inf.area || "");
   setVal("infra_categoria", inf.categoria);
   setVal("infra_marca", inf.marca);
   setVal("infra_modelo", inf.modelo);
   setVal("infra_so_select", inf.sistema_operativo);
+  setVal("infra_kernel", inf.kernel || "");
   setVal("infra_mac_ethernet", inf.mac_ethernet);
+  setVal("infra_mac_wifi", inf.mac_wifi || "");
   setVal("infra_pc_id", inf.pc_id);
   setVal("infra_pc_password", inf.pc_password);
   setVal("infra_tipo_ip", inf.tipo_ip || "IP VPN tun0");
@@ -987,12 +1038,15 @@ function poblarFormularioDesdeState() {
   const cam = certificadoState.estacion_camara || {};
   setVal("cam_instalada", cam.camara_instalada || "No");
   setVal("cam_modelo_camara", cam.modelo_camara || "Domo");
+  setVal("cam_mac_camara", cam.mac_camara || "");
   setVal("cam_conexion_camara", cam.conexion_camara || "Switch PoE");
   setVal("cam_ip_fija_camara", cam.ip_fija_camara || "");
   setVal("cam_ubicacion_camara", cam.ubicacion_camara || "Pontón");
 
   setVal("cam_estacion_instalada", cam.estacion_instalada || "No");
   setVal("cam_modelo_estacion", cam.modelo_estacion || "Davis");
+  setVal("cam_id_estacion", cam.id_estacion_meteorologica || "");
+  setVal("cam_altura_estacion", cam.altura_estacion || "");
   setVal("cam_region_davis", cam.region_davis || "US");
   setVal("cam_ubicacion_estacion", cam.ubicacion_estacion || "Pontón");
 
@@ -1003,11 +1057,16 @@ function poblarFormularioDesdeState() {
 
   const ab = certificadoState.monitoreo_abiotico || {};
   setVal("ab_instalado", ab.instalado);
+  const containerAb = document.getElementById("abiotico_fields_container");
+  if (containerAb) {
+    containerAb.style.display = ab.instalado === "No" ? "none" : "block";
+  }
   setVal("ab_tipo_antena", ab.tipo_antena);
   setVal("ab_ubicacion_antena", ab.ubicacion_antena || "Púlpito / Techo");
   setVal("ab_version", ab.version);
   setVal("ab_mac", ab.mac);
   setVal("ab_panid", ab.panid);
+  setVal("ab_cantidad_equipos_asociados", ab.cantidad_equipos_asociados || "");
 
   const act = certificadoState.activacion || {};
   setVal("act_ip_final", act.ip_final);
@@ -1030,13 +1089,14 @@ function poblarFormularioDesdeState() {
   setVal("ub_repuestos_general", certificadoState.ubicacion_repuestos || "");
   setVal("obs_texto", certificadoState.observaciones || "");
 
-  renderMotesList();
-  renderRepuestosMotesDropdown();
-  renderUbicacionesList();
-  renderRepuestosList();
-  renderEvidenciasGrid();
-  renderAlarmasTabla();
-  actualizarVistaPreviaDerechaPorModulo();
+  try { renderMotesList(); } catch(e) {}
+  try { renderRepuestosMotesDropdown(); } catch(e) {}
+  try { renderUbicacionesList(); } catch(e) {}
+  try { renderRepuestosList(); } catch(e) {}
+  try { renderEvidenciasGrid(); } catch(e) {}
+  try { renderAlarmasTabla(); } catch(e) {}
+  try { renderLiveHtmlSheet(); } catch(e) {}
+  try { actualizarVistaPreviaDerechaPorModulo(); } catch(e) {}
 }
 
 function setupDragAndDrop() {
@@ -1153,7 +1213,7 @@ async function procesarPegadoTextoAlarmas() {
       renderAlarmasTabla();
       renderLiveHtmlSheet();
       document.getElementById("txtPegarAlarmas").value = "";
-      mostrarToast(`📋 ${data.alarmas.length} alarmas agregadas desde texto`, "success");
+      mostrarToast(`${data.alarmas.length} alarmas agregadas desde texto`, "success");
     } else {
       mostrarToast("No se detectaron filas válidas de alarmas en el texto pegado", "warning");
     }
@@ -1177,17 +1237,56 @@ function renderEvidenciasGrid() {
   evs.forEach((ev, idx) => {
     const card = document.createElement("div");
     card.className = "evidencia-card";
-    const src = ev.preview || `/certificado/api/pdf_preview/2026/${certificadoState.datos_generales.location}/evidencias/${ev.nombre}`;
+    card.style.position = "relative";
+    const src = ev.preview || `/api/pdf_preview/2026/${certificadoState.datos_generales.location || 'ce-tranqui1'}/evidencias/${ev.nombre}`;
+    const titulo = ev.titulo || ev.nombre || `Foto N° ${idx + 1}`;
+
+    const btnSubir = idx > 0 ? `<button class="btn btn-small btn-secondary" onclick="subirEvidencia(${idx})" title="Mover Arriba">⬆️</button>` : '';
+    const btnBajar = idx < evs.length - 1 ? `<button class="btn btn-small btn-secondary" onclick="bajarEvidencia(${idx})" title="Mover Abajo">⬇️</button>` : '';
 
     card.innerHTML = `
-      <img src="${src}" alt="${ev.nombre}">
-      <div class="footer">
-        <span>Foto N° ${idx + 1}</span>
-        <button class="btn btn-small btn-secondary" onclick="eliminarEvidencia(${idx})">❌</button>
+      <img src="${src}" alt="${titulo}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 6px 6px 0 0;">
+      <div class="footer" style="padding: 8px; display: flex; flex-direction: column; gap: 6px; background: var(--card-bg);">
+        <input type="text" value="${titulo}" onchange="actualizarNombreEvidencia(${idx}, this.value)" placeholder="Nombre o descripción foto..." style="font-size: 11px; padding: 4px 6px; border: 1px solid var(--border-color); border-radius: 4px; width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 11px; font-weight: 600; color: var(--text-muted);">Foto N° ${idx + 1}</span>
+          <div style="display: flex; gap: 4px;">
+            ${btnSubir}
+            ${btnBajar}
+            <button class="btn btn-small btn-secondary" onclick="eliminarEvidencia(${idx})" title="Eliminar foto">❌</button>
+          </div>
+        </div>
       </div>
     `;
     container.appendChild(card);
   });
+}
+
+function subirEvidencia(idx) {
+  if (idx <= 0) return;
+  const temp = certificadoState.evidencias[idx];
+  certificadoState.evidencias[idx] = certificadoState.evidencias[idx - 1];
+  certificadoState.evidencias[idx - 1] = temp;
+  renderEvidenciasGrid();
+  renderLiveHtmlSheet();
+}
+
+function bajarEvidencia(idx) {
+  const evs = certificadoState.evidencias || [];
+  if (idx >= evs.length - 1) return;
+  const temp = certificadoState.evidencias[idx];
+  certificadoState.evidencias[idx] = certificadoState.evidencias[idx + 1];
+  certificadoState.evidencias[idx + 1] = temp;
+  renderEvidenciasGrid();
+  renderLiveHtmlSheet();
+}
+
+function actualizarNombreEvidencia(idx, nuevoNombre) {
+  if (certificadoState.evidencias && certificadoState.evidencias[idx]) {
+    certificadoState.evidencias[idx].titulo = nuevoNombre;
+    certificadoState.evidencias[idx].nombre_mostrar = nuevoNombre;
+    renderLiveHtmlSheet();
+  }
 }
 
 function eliminarEvidencia(idx) {
@@ -1290,7 +1389,7 @@ function renderAlarmasTabla() {
       <td><input type="text" value="${al.conf_max}" onchange="actualizarAlarma(${idx}, 'conf_max', this.value)"></td>
       <td><input type="text" value="${al.medicion}" onchange="actualizarAlarma(${idx}, 'medicion', this.value)"></td>
       <td><input type="text" value="${al.envio}" onchange="actualizarAlarma(${idx}, 'envio', this.value)"></td>
-      <td><button class="btn btn-small btn-secondary" onclick="eliminarAlarma(${idx})">❌</button></td>
+      <td><button class="btn btn-small btn-secondary" onclick="eliminarAlarma(${idx})" title="Eliminar alarma">❌</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -1352,28 +1451,42 @@ function renderLiveHtmlSheet() {
         } else {
           elemList.forEach((el, idx) => {
             if (!el) return;
+            const nombreEq = el.nombre || el.name || "";
+            const tipoEq = el.tipo || "-";
+            const labelEq = nombreEq ? `${nombreEq} (${tipoEq})` : tipoEq;
             const ident = el.mac ? `MAC: ${el.mac}` : (el.serie ? `S/N: ${el.serie}` : '-');
+
+            let sensoresStr = "";
+            if (el.sensores && el.sensores.length > 0) {
+              const sensoresOrd = [...el.sensores].sort((a, b) => parseFloat(a.metros || 0) - parseFloat(b.metros || 0));
+              sensoresStr = sensoresOrd.map(s => `• ${s.tipo_sensor || 'Sensor'} (${s.metros ? s.metros + 'm' : '-'})${s.sn ? ' [S/N: ' + s.sn + ']' : ''}`).join("<br>");
+            } else if (el.metraje) {
+              sensoresStr = `${el.metraje} metros`;
+            } else {
+              sensoresStr = "-";
+            }
+
             rows += `<tr>
               <td style="text-align:center;">${idx + 1}</td>
-              <td>${el.tipo || '-'}</td>
-              <td style="text-align:center;">${el.metraje ? el.metraje + 'm' : '-'}</td>
-              <td>${ident}</td>
+              <td><strong>${labelEq}</strong></td>
+              <td><code>${ident}</code></td>
+              <td>${sensoresStr}</td>
             </tr>`;
           });
         }
 
-        const coordsText = u.coordenadas ? ` <span style="font-weight:normal; color:#666666;">(${u.coordenadas})</span>` : '';
+        const coordsText = u.coordenadas ? ` <span style="font-weight:normal; color:#666666;">(GPS: ${u.coordenadas})</span>` : '';
         htmlUbicacionesTables += `
           <div style="font-size:10px; font-weight:bold; color:#333333; margin-top:6px; margin-bottom:3px;">
-            📍 Ubicación: ${u.nombre || 'Ubicación'}${coordsText}
+            Ubicación: ${u.nombre || 'Ubicación'}${coordsText}
           </div>
           <table class="reportlab-list-table">
             <thead>
               <tr>
                 <th style="width:30px;">N°</th>
-                <th>Tipo de elemento</th>
-                <th style="width:80px;">Metraje</th>
-                <th>MAC / N° de serie</th>
+                <th>Equipo / Elemento</th>
+                <th>MAC</th>
+                <th>Sensores Asociados (Tipo — Metros)</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -1416,7 +1529,7 @@ function renderLiveHtmlSheet() {
       { key: "antena_operativa", desc: "Antena receptora operativa" },
       { key: "jennic_comunicando", desc: "Todos los equipos Jennic comunicando" },
       { key: "sensores_datos", desc: "Sensores detectados y entregando datos" },
-      { key: "archivos_dat", desc: "Archivos .dat generándose y actualizándose" },
+      { key: "archivos_dat", desc: "Archivos .dat generándose y guardándose" },
       { key: "transmision_estacion", desc: "Transmisión datos Estación Meteorológica" },
       { key: "transmision_camara", desc: "Transmisión datos Fotográficos" },
       { key: "datos_dataweb", desc: "Datos visibles y actualizando en DataWeb" },
@@ -1440,17 +1553,25 @@ function renderLiveHtmlSheet() {
       </tr>`;
     });
 
+    const abioticoSeccionHtml = (ab.instalado !== 'No') ? `
+      <tr><td class="attr">¿Monitoreo Abiótico?</td><td class="val">${ab.instalado || 'Si'}</td></tr>
+      <tr><td class="attr">Tipo y Ubicación de Antena</td><td class="val">${ab.tipo_antena || 'Outdoor'} (${ab.ubicacion_antena || 'Púlpito / Techo'})</td></tr>
+      <tr><td class="attr">Versión Firmware / MAC</td><td class="val">${ab.version || '-'} | MAC: ${ab.mac || '-'}</td></tr>
+      <tr><td class="attr">Pan ID</td><td class="val">${ab.panid || '-'}</td></tr>
+      ${ab.cantidad_equipos_asociados ? `<tr><td class="attr">Equipos Jennic Asociados</td><td class="val">${ab.cantidad_equipos_asociados}</td></tr>` : ''}
+    ` : '';
+
     sheet.innerHTML = `
       <!-- Encabezado Oficial ReportLab 3 Cajas -->
       <div class="reportlab-header-box">
         <div class="reportlab-header-left">
-          <img src="/static/certificado/logo.png" alt="Innovex">
+          <img src="logo.png" alt="Innovex">
         </div>
         <div class="reportlab-header-center">
           VALIDACIÓN DE INSTALACIÓN
         </div>
         <div class="reportlab-header-right">
-          <div class="row"><div class="lbl">Registro</div><div class="val">${fichaNo}</div></div>
+          <div class="row"><div class="lbl">N° Ficha</div><div class="val">${fichaNo}</div></div>
           <div class="row"><div class="lbl">Periodo</div><div class="val">2026</div></div>
           <div class="row"><div class="lbl">Páginas</div><div class="val">1 de 1</div></div>
         </div>
@@ -1475,10 +1596,13 @@ function renderLiveHtmlSheet() {
       <!-- 2. Infraestructura & Conectividad -->
       <div class="reportlab-sec-title">2. Infraestructura del PC de Monitoreo & Conectividad</div>
       <table class="reportlab-attr-table">
+        ${inf.area ? `<tr><td class="attr">Área</td><td class="val">${inf.area}</td></tr>` : ''}
         <tr><td class="attr">Categoría Equipo</td><td class="val">${inf.categoria || '-'}</td></tr>
         <tr><td class="attr">Marca / Modelo</td><td class="val">${inf.marca || ''} ${inf.modelo || ''}</td></tr>
         <tr><td class="attr">Sistema Operativo</td><td class="val">${inf.sistema_operativo || '-'}</td></tr>
+        ${inf.kernel ? `<tr><td class="attr">Kernel</td><td class="val">${inf.kernel}</td></tr>` : ''}
         <tr><td class="attr">MAC Ethernet</td><td class="val">${inf.mac_ethernet || '-'}</td></tr>
+        ${inf.mac_wifi ? `<tr><td class="attr">MAC Wi-Fi</td><td class="val">${inf.mac_wifi}</td></tr>` : ''}
         <tr><td class="attr">ID Equipo / PC</td><td class="val">${inf.pc_id || '-'}</td></tr>
         <tr><td class="attr">Contraseña PC</td><td class="val">${inf.pc_password || '-'}</td></tr>
         <tr><td class="attr">Tipo de Conexión IP</td><td class="val">${inf.tipo_ip || 'IP VPN tun0'}</td></tr>
@@ -1491,17 +1615,14 @@ function renderLiveHtmlSheet() {
       <!-- 3. Antena, Cámara & Estación Meteorológica -->
       <div class="reportlab-sec-title">3. Antena, Estación Meteorológica & Cámara</div>
       <table class="reportlab-attr-table">
-        <tr><td class="attr">¿Monitoreo Abiótico?</td><td class="val">${ab.instalado || 'Si'}</td></tr>
-        <tr><td class="attr">Tipo y Ubicación de Antena</td><td class="val">${ab.tipo_antena || 'Outdoor'} (${ab.ubicacion_antena || 'Púlpito / Techo'})</td></tr>
-        <tr><td class="attr">Versión Firmware / MAC</td><td class="val">${ab.version || '-'} | MAC: ${ab.mac || '-'}</td></tr>
-        <tr><td class="attr">Pan ID</td><td class="val">${ab.panid || '-'}</td></tr>
+        ${abioticoSeccionHtml}
         <tr>
           <td class="attr">Estación Meteorológica</td>
-          <td class="val">${cam.estacion_instalada === 'Si' ? `${cam.modelo_estacion || 'Davis'} ${cam.modelo_estacion === 'Davis' && cam.region_davis ? `(Región ${cam.region_davis})` : ''} - Ubicación: ${cam.ubicacion_estacion || 'Pontón'}` : 'No'}</td>
+          <td class="val">${cam.estacion_instalada === 'Si' ? `${cam.modelo_estacion || 'Davis'} ${cam.id_estacion_meteorologica ? `[ID: ${cam.id_estacion_meteorologica}]` : ''} ${cam.altura_estacion ? `[Altura: ${cam.altura_estacion}m]` : ''} ${cam.modelo_estacion === 'Davis' && cam.region_davis ? `(Región ${cam.region_davis})` : ''} - Ubicación: ${cam.ubicacion_estacion || 'Pontón'}` : 'No'}</td>
         </tr>
         <tr>
           <td class="attr">Cámara de Alimentación</td>
-          <td class="val">${cam.camara_instalada === 'Si' ? `${cam.modelo_camara || 'Domo'} (${cam.conexion_camara || 'Switch PoE'}) - IP: ${cam.ip_fija_camara || '-'} - Ubicación: ${cam.ubicacion_camara || 'Pontón'}` : 'No'}</td>
+          <td class="val">${cam.camara_instalada === 'Si' ? `${cam.modelo_camara || 'Domo'} ${cam.mac_camara ? `[MAC: ${cam.mac_camara}]` : ''} (${cam.conexion_camara || 'Switch PoE'}) - IP: ${cam.ip_fija_camara || '-'} - Ubicación: ${cam.ubicacion_camara || 'Pontón'}` : 'No'}</td>
         </tr>
         <tr>
           <td class="attr">Switch PoE</td>
@@ -1509,21 +1630,23 @@ function renderLiveHtmlSheet() {
         </tr>
       </table>
 
-      <!-- 4. Ubicaciones e Instalación -->
-      <div class="reportlab-sec-title">4. Detalle de equipos instalados por ubicación</div>
-      ${htmlUbicacionesTables}
+      ${ab.instalado !== 'No' ? `
+        <!-- 4. Ubicaciones e Instalación -->
+        <div class="reportlab-sec-title">4. Detalle de equipos instalados por ubicación</div>
+        ${htmlUbicacionesTables}
 
-      <!-- 5. Repuestos -->
-      <div class="reportlab-sec-title">5. Equipos de repuesto (Almacenamiento: ${certificadoState.ubicacion_repuestos || 'Bodega Pontón'})</div>
-      ${(reps && reps.length) ? `
-        <table class="reportlab-list-table">
-          <thead><tr><th>Tipo de Equipo</th><th>Metraje</th><th>Identificación (MAC/Serie)</th></tr></thead>
-          <tbody>${htmlRepuestosRows}</tbody>
-        </table>
-      ` : '<div style="font-size:10px; color:#666666; margin-bottom:8px;">Sin repuestos registrados.</div>'}
+        <!-- 5. Repuestos -->
+        <div class="reportlab-sec-title">5. Equipos de repuesto (Almacenamiento: ${certificadoState.ubicacion_repuestos || 'Bodega Pontón'})</div>
+        ${(reps && reps.length) ? `
+          <table class="reportlab-list-table">
+            <thead><tr><th>Tipo de Equipo</th><th>Metros</th><th>MAC</th></tr></thead>
+            <tbody>${htmlRepuestosRows}</tbody>
+          </table>
+        ` : '<div style="font-size:10px; color:#666666; margin-bottom:8px;">Sin repuestos registrados.</div>'}
+      ` : ''}
 
-      <!-- 6. Activación -->
-      <div class="reportlab-sec-title">6. Validación de activación del servicio</div>
+      <!-- Activación -->
+      <div class="reportlab-sec-title">${ab.instalado !== 'No' ? '6' : '4'}. Validación de activación del servicio</div>
       <table class="reportlab-attr-table">
         <tr><td class="attr">IP Asignada / Interfaz</td><td class="val">${act.ip_final || '-'} (${act.interfaz || '-'})</td></tr>
         <tr><td class="attr">Responsable Activación</td><td class="val">${act.responsable_activacion || '-'}</td></tr>
@@ -1535,30 +1658,68 @@ function renderLiveHtmlSheet() {
         <tbody>${htmlChecklistRows}</tbody>
       </table>
 
-      <!-- 7. Alarmas -->
+      <!-- Alarmas -->
       ${(als && als.length) ? `
-        <div class="reportlab-sec-title">7. Configuración de alarmas</div>
+        <div class="reportlab-sec-title">${ab.instalado !== 'No' ? '7' : '5'}. Configuración de alarmas</div>
         <table class="reportlab-list-table">
           <thead><tr><th>Status</th><th>Equipo</th><th>Sensor</th><th>Usuario</th><th>Mín</th><th>Máx</th><th>Medición</th><th>Envío</th></tr></thead>
           <tbody>${htmlAlarmasRows}</tbody>
         </table>
       ` : ''}
 
-      <!-- 8. Observaciones -->
-      <div class="reportlab-sec-title">8. Observaciones y notas libres</div>
+      <!-- Observaciones -->
+      <div class="reportlab-sec-title">${ab.instalado !== 'No' ? (als && als.length ? '8' : '7') : (als && als.length ? '6' : '5')}. Observaciones y notas libres</div>
       <div class="reportlab-obs-box">
         ${certificadoState.observaciones || '<span style="color:#aaaaaa;">[ Espacio reservado para notas de campo y firma del cliente ]</span>'}
       </div>
 
-      <!-- 9. Registro Fotográfico -->
+      <!-- Registro Fotográfico -->
       ${(evs && evs.length) ? `
-        <div class="reportlab-sec-title">9. Registro fotográfico</div>
+        <div class="reportlab-sec-title">${ab.instalado !== 'No' ? (als && als.length ? '9' : '8') : (als && als.length ? '7' : '6')}. Registro fotográfico</div>
         <div style="font-size:10px; color:#555555; margin-bottom:8px;">Adjuntas ${evs.length} fotografía(s) de evidencia técnica.</div>
       ` : ''}
     `;
   } catch (err) {
     console.error("Error en renderLiveHtmlSheet:", err);
   }
+}
+
+let sensoresDraft = {};
+
+function agregarSensorDraft(ubIdx) {
+  const tipoSensor = document.getElementById(`elem_sensor_tipo_${ubIdx}`).value;
+  const metros = document.getElementById(`elem_sensor_metros_${ubIdx}`).value.trim();
+  const snInput = document.getElementById(`elem_sensor_sn_${ubIdx}`);
+  const sn = snInput ? snInput.value.trim() : "";
+  if (!sensoresDraft[ubIdx]) sensoresDraft[ubIdx] = [];
+  sensoresDraft[ubIdx].push({ tipo_sensor: tipoSensor, metros: metros, sn: sn });
+  if (snInput) snInput.value = "";
+  const mInput = document.getElementById(`elem_sensor_metros_${ubIdx}`);
+  if (mInput) mInput.value = "";
+  renderSensoresDraft(ubIdx);
+}
+
+function eliminarSensorDraft(ubIdx, sIdx) {
+  if (sensoresDraft[ubIdx]) {
+    sensoresDraft[ubIdx].splice(sIdx, 1);
+    renderSensoresDraft(ubIdx);
+  }
+}
+
+function renderSensoresDraft(ubIdx) {
+  const container = document.getElementById(`lista_sensores_draft_${ubIdx}`);
+  if (!container) return;
+  const list = sensoresDraft[ubIdx] || [];
+  if (list.length === 0) {
+    container.innerHTML = `<span style="font-size: 11px; color: var(--text-muted);">Sin sensores asociados.</span>`;
+    return;
+  }
+  container.innerHTML = list.map((s, idx) => `
+    <span class="badge badge-info" style="margin:2px; display:inline-flex; align-items:center; gap:4px;">
+      ${s.tipo_sensor} (${s.metros ? s.metros + 'm' : '-'})${s.sn ? ' [S/N: ' + s.sn + ']' : ''}
+      <button type="button" onclick="eliminarSensorDraft(${ubIdx}, ${idx})" style="border:none; background:transparent; color:red; cursor:pointer; font-weight:bold;">×</button>
+    </span>
+  `).join(" ");
 }
 
 function renderUbicacionesList() {
@@ -1581,31 +1742,60 @@ function renderUbicacionesList() {
 
     let elementosRows = "";
     elementos.forEach((elem, elIdx) => {
-      const metrajeStr = elem.metraje ? `${elem.metraje}m` : "-";
+      const nombreEq = elem.nombre || elem.name || "";
+      const tipoEq = elem.tipo || "-";
+      const labelEq = nombreEq ? `<strong>${nombreEq}</strong> (${tipoEq})` : `<strong>${tipoEq}</strong>`;
       const serieStr = elem.serie || elem.mac || "-";
+      
+      let sensoresHtml = "";
+      if (elem.sensores && elem.sensores.length > 0) {
+        const sensoresOrd = [...elem.sensores].sort((a, b) => parseFloat(a.metros || 0) - parseFloat(b.metros || 0));
+        sensoresHtml = sensoresOrd.map(s => {
+          const snStr = s.sn ? ` [S/N: ${s.sn}]` : '';
+          return `<span class="badge badge-info" style="margin:2px;">${s.tipo_sensor} (${s.metros ? s.metros + 'm' : '-'})${snStr}</span>`;
+        }).join(" ");
+      } else if (elem.metraje) {
+        sensoresHtml = `<span class="badge badge-secondary">${elem.metraje}m</span>`;
+      } else {
+        sensoresHtml = `<span style="color:#aaa;">Sin sensores</span>`;
+      }
+
       elementosRows += `
         <tr>
-          <td><strong>${elem.tipo}</strong></td>
-          <td>${metrajeStr}</td>
+          <td>${labelEq}</td>
           <td><code>${serieStr}</code></td>
+          <td>${sensoresHtml}</td>
           <td style="width: 40px; text-align: center;">
-            <button class="btn btn-small btn-secondary" onclick="eliminarElementoUbicacion(${ubIdx}, ${elIdx})">❌</button>
+            <button class="btn btn-small btn-secondary" onclick="eliminarElementoUbicacion(${ubIdx}, ${elIdx})" title="Eliminar equipo">❌</button>
           </td>
         </tr>
       `;
     });
 
     const motesList = certificadoState.motes || [];
-    let motesOptionsHtml = `<option value="">-- Seleccionar MAC de cmd motes (${motesList.length} detectados) --</option>`;
-    motesList.forEach(m => {
+    const motesOrdenados = [...motesList].sort((a, b) => {
+      const nameA = a.asociacion || a.name || "";
+      const nameB = b.asociacion || b.name || "";
+      return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+    });
+
+    let motesOptionsHtml = `<option value="">-- Seleccionar Mote detectado (${motesList.length} detectados) --</option>`;
+    motesOrdenados.forEach(m => {
       const name = m.asociacion || m.name || `Equipo ${m.mote || ''}`;
-      motesOptionsHtml += `<option value="${m.mac}">Mote ${m.mote || ''}: ${m.mac} (${name})</option>`;
+      motesOptionsHtml += `<option value="${m.mac}" data-name="${name}">${name} (MAC: ${m.mac})</option>`;
     });
 
     const motesDropdownElemHtml = motesList.length > 0 ? `
       <div class="form-group" style="grid-column: span 3;">
-        <label style="color: var(--primary-color, #2563eb);">✨ Asignar MAC de Mote Detectado</label>
-        <select id="select_mote_elem_${ubIdx}" onchange="if(this.value){ document.getElementById('elem_serie_${ubIdx}').value = this.value; }">
+        <label style="color: var(--primary-color, #2563eb);">Asignar MAC y Nombre de Mote Detectado</label>
+        <select id="select_mote_elem_${ubIdx}" onchange="
+          if(this.value){ 
+            document.getElementById('elem_serie_${ubIdx}').value = this.value; 
+            const selectedOpt = this.options[this.selectedIndex];
+            if(selectedOpt && selectedOpt.dataset.name) {
+              document.getElementById('elem_nombre_${ubIdx}').value = selectedOpt.dataset.name;
+            }
+          }">
           ${motesOptionsHtml}
         </select>
       </div>
@@ -1614,7 +1804,7 @@ function renderUbicacionesList() {
     card.innerHTML = `
       <div class="ubicacion-header">
         <div>
-          <h3>📍 ${ub.nombre} <span style="font-size:12px; color:var(--text-muted);">${coordsStr}</span></h3>
+          <h3>${ub.nombre} <span style="font-size:12px; color:var(--text-muted);">${coordsStr}</span></h3>
         </div>
         <div>
           <button class="btn btn-small btn-primary" onclick="mostrarFormNuevoElemento(${ubIdx})">➕ Elemento</button>
@@ -1623,33 +1813,58 @@ function renderUbicacionesList() {
       </div>
 
       <div id="formNuevoElem_${ubIdx}" class="inline-form-card" style="display: none;">
-        <h3>Agregar Elemento Instalado en ${ub.nombre}</h3>
+        <h3>Agregar Equipo Instalado en ${ub.nombre}</h3>
         <div class="form-grid">
           ${motesDropdownElemHtml}
           <div class="form-group">
-            <label>Tipo Elemento</label>
+            <label>Tipo Equipo</label>
             <select id="elem_tipo_${ubIdx}">
-              ${TIPOS_ELEMENTOS.map(t => `<option value="${t}">${t}</option>`).join("")}
+              ${TIPOS_EQUIPOS.map(t => `<option value="${t}">${t}</option>`).join("")}
             </select>
           </div>
           <div class="form-group">
-            <label>Metraje (m)</label>
-            <input type="text" id="elem_metraje_${ubIdx}" placeholder="ej. 5">
+            <label>Nombre / Identificador Equipo</label>
+            <input type="text" id="elem_nombre_${ubIdx}" placeholder="ej. Name 1 / Mote 01">
           </div>
           <div class="form-group">
-            <label>S/N o MAC</label>
+            <label>MAC</label>
             <input type="text" id="elem_serie_${ubIdx}" placeholder="ej. 00:15:8D:00:09:24:53:F7">
           </div>
         </div>
-        <div class="form-buttons">
-          <button class="btn btn-primary btn-small" onclick="guardarElementoUbicacion(${ubIdx})">Guardar Elemento</button>
+
+        <div style="margin-top: 12px; padding: 10px; background: var(--bg-color, #f8fafc); border-radius: 6px; border: 1px solid var(--border-color, #e2e8f0);">
+          <h4 style="font-size: 12px; font-weight: 600; margin-bottom: 8px;">Sensores Asociados a este Equipo</h4>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Tipo Sensor</label>
+              <select id="elem_sensor_tipo_${ubIdx}">
+                ${TIPOS_SENSORES.map(s => `<option value="${s}">${s}</option>`).join("")}
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Metros (m)</label>
+              <input type="text" id="elem_sensor_metros_${ubIdx}" placeholder="ej. 5">
+            </div>
+            <div class="form-group">
+              <label>S/N Sensor (Opcional)</label>
+              <input type="text" id="elem_sensor_sn_${ubIdx}" placeholder="ej. SN-98765">
+            </div>
+            <div class="form-group" style="display: flex; align-items: flex-end;">
+              <button type="button" class="btn btn-small btn-secondary" onclick="agregarSensorDraft(${ubIdx})">➕ Agregar Sensor</button>
+            </div>
+          </div>
+          <div id="lista_sensores_draft_${ubIdx}" style="margin-top: 6px;"></div>
+        </div>
+
+        <div class="form-buttons" style="margin-top: 12px;">
+          <button class="btn btn-primary btn-small" onclick="guardarElementoUbicacion(${ubIdx})">Guardar Equipo</button>
           <button class="btn btn-secondary btn-small" onclick="ocultarFormNuevoElemento(${ubIdx})">Cancelar</button>
         </div>
       </div>
 
       ${elementos.length > 0 ? `
         <table class="elementos-table">
-          <thead><tr><th>Tipo</th><th>Metraje</th><th>S/N / MAC</th><th>Acción</th></tr></thead>
+          <thead><tr><th>Equipo / Elemento</th><th>MAC</th><th>Sensores Asociados (Tipo — Metros)</th><th>Acción</th></tr></thead>
           <tbody>${elementosRows}</tbody>
         </table>
       ` : `<div class="subtitle" style="margin-top:8px;">Sin equipos instalados.</div>`}
@@ -1682,24 +1897,37 @@ function eliminarUbicacion(idx) {
 }
 
 function mostrarFormNuevoElemento(ubIdx) {
+  sensoresDraft[ubIdx] = [];
   const f = document.getElementById(`formNuevoElem_${ubIdx}`);
   if (f) f.style.display = "block";
+  renderSensoresDraft(ubIdx);
 }
 
 function ocultarFormNuevoElemento(ubIdx) {
+  sensoresDraft[ubIdx] = [];
   const f = document.getElementById(`formNuevoElem_${ubIdx}`);
   if (f) f.style.display = "none";
 }
 
 function guardarElementoUbicacion(ubIdx) {
   const tipo = document.getElementById(`elem_tipo_${ubIdx}`).value;
-  const metraje = document.getElementById(`elem_metraje_${ubIdx}`).value.trim();
+  const nombre = document.getElementById(`elem_nombre_${ubIdx}`).value.trim();
   const serie = document.getElementById(`elem_serie_${ubIdx}`).value.trim();
 
   const ub = certificadoState.ubicaciones[ubIdx];
   if (!ub.elementos) ub.elementos = [];
-  ub.elementos.push({ tipo: tipo, metraje: metraje, serie: serie });
 
+  const sensores = sensoresDraft[ubIdx] || [];
+
+  ub.elementos.push({
+    tipo: tipo,
+    nombre: nombre,
+    serie: serie,
+    mac: serie,
+    sensores: [...sensores]
+  });
+
+  sensoresDraft[ubIdx] = [];
   ocultarFormNuevoElemento(ubIdx);
   renderUbicacionesList();
   renderLiveHtmlSheet();
@@ -1731,7 +1959,7 @@ function renderRepuestosList() {
 
     item.innerHTML = `
       <div class="info"><strong>${idx + 1}. ${rep.tipo}</strong>${identStr}</div>
-      <button class="btn btn-small btn-secondary" onclick="eliminarRepuesto(${idx})">❌</button>
+      <button class="btn btn-small btn-secondary" onclick="eliminarRepuesto(${idx})"></button>
     `;
     container.appendChild(item);
   });
@@ -1745,7 +1973,7 @@ function renderMotesList() {
   if (motes.length === 0) {
     container.innerHTML = `
       <div style="padding: 12px; background: var(--bg-tertiary, #f8fafc); border-radius: 6px; border: 1px dashed var(--border-color, #cbd5e1); font-size: 13px; color: var(--text-muted);">
-        ℹ️ No se han detectado equipos Jennic. Pegue la salida del comando <code>cmd motes</code> o <code>cmd status</code> en el <strong>Auto-rellenado Inteligente</strong> para importar la lista de MACs automáticamente.
+        No se han detectado equipos Jennic. Pegue la salida del comando <code>cmd motes</code> o <code>cmd status</code> en el <strong>Auto-rellenado Inteligente</strong> para importar la lista de MACs automáticamente.
       </div>
     `;
     return;
@@ -1767,7 +1995,7 @@ function renderMotesList() {
         <td>${lastRx}</td>
         <td><span class="badge badge-info">${asoc}</span></td>
         <td style="text-align: center;">
-          <button class="btn btn-small btn-secondary" onclick="copiarMacAlPortapapeles('${mac}')" title="Copiar MAC">📋 Copiar</button>
+          <button class="btn btn-small btn-secondary" onclick="copiarMacAlPortapapeles('${mac}')" title="Copiar MAC">Copiar</button>
         </td>
       </tr>
     `;
@@ -1812,7 +2040,7 @@ function copiarMacAlPortapapeles(mac) {
   if (!mac) return;
   if (navigator.clipboard) {
     navigator.clipboard.writeText(mac).then(() => {
-      mostrarToast(`📋 MAC ${mac} copiada al portapapeles`, "success");
+      mostrarToast(`MAC ${mac} copiada al portapapeles`, "success");
     }).catch(() => {
       mostrarToast(`MAC: ${mac}`, "info");
     });
@@ -1923,7 +2151,7 @@ function validarCamposObligatorios() {
   const nom = (dg.nombre_centro || "").trim();
 
   if (!loc || !nom) {
-    mostrarToast("⚠️ Location ID y Nombre del Centro son campos obligatorios.", "error");
+    mostrarToast("Location ID y Nombre del Centro son campos obligatorios.", "error");
     const tabBtn = document.querySelector(".tab-btn[data-tab='generales']");
     if (tabBtn) tabBtn.click();
     
@@ -1943,7 +2171,7 @@ function validarCamposObligatorios() {
 async function compilarYMostrarPDF() {
   if (!validarCamposObligatorios()) return;
 
-  mostrarToast("⚙️ Compilando PDF Oficial ReportLab...", "info");
+  mostrarToast("Compilando PDF Oficial ReportLab...", "info");
   try {
     const res = await fetch("/certificado/api/generate_pdf", {
       method: "POST",
@@ -1960,7 +2188,7 @@ async function compilarYMostrarPDF() {
 
       const frame = document.getElementById("pdfFrame");
       if (frame) frame.src = data.pdf_preview_url + "?t=" + new Date().getTime();
-      mostrarToast("✅ PDF Oficial listo.", "success");
+      mostrarToast("PDF Oficial listo.", "success");
     }
   } catch (err) {
     mostrarToast("Error al generar PDF: " + err.message, "error");
@@ -1969,13 +2197,16 @@ async function compilarYMostrarPDF() {
 
 function abrirVistaPreviaPopout() {
   const loc = certificadoState.datos_generales.location || "ce-tranqui1";
-  const url = `/certificado/api/pdf_preview/2026/${loc}/certificado_inst_${loc}.pdf`;
+  const url = `/api/pdf_preview/2026/${loc}/certificado_inst_${loc}.pdf`;
   window.open(url, "_blank", "width=900,height=1000");
 }
 
 async function procesarAutofill() {
   const texto = document.getElementById("autofillText").value;
-  if (!texto.trim()) return;
+  if (!texto.trim()) {
+    mostrarToast("Por favor pegue la salida de consola en el cuadro", "warning");
+    return;
+  }
 
   try {
     const res = await fetch("/certificado/api/autofill", {
@@ -1988,11 +2219,103 @@ async function procesarAutofill() {
     if (data.status === "ok") {
       certificadoState = data.certificado;
       poblarFormularioDesdeState();
-      mostrarToast("✅ Datos parseados con éxito.", "success");
+      mostrarToast("Documento autorellenado con éxito.", "success");
+      
+      // Cambiar automáticamente de pestaña: "Auto-relleno Rápido" -> "1. Datos generales"
+      activarSeccionTab("generales");
+      document.querySelectorAll(".tab-btn").forEach(t => {
+        if (t.dataset.tab === "generales") t.classList.add("active");
+        else t.classList.remove("active");
+      });
     }
   } catch (err) {
-    mostrarToast("Error de conexión", "error");
+    mostrarToast("Error de conexión al parsear datos", "error");
   }
+}
+
+async function ejecutarSSHAutofill() {
+  const host = document.getElementById("ssh_autofill_host")?.value.trim();
+  const usuario = document.getElementById("ssh_autofill_user")?.value.trim() || "innovex";
+  const clave = document.getElementById("ssh_autofill_pass")?.value || "CERMAQ@sh20";
+  const puerto_ssh = document.getElementById("ssh_autofill_port")?.value.trim() || "22";
+  const puerto_telnet = document.getElementById("ssh_autofill_telnet_port")?.value.trim() || "9999";
+
+  if (!host) {
+    mostrarToast("Ingrese la IP o DNS del equipo remoto para conectar", "warning");
+    return;
+  }
+
+  const btn = document.getElementById("btnEjecutarSSHAutofill");
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Conectando...";
+
+  try {
+    const res = await fetch("/certificado/api/ssh_autofill", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ host, usuario, clave, puerto_ssh, puerto_telnet, certificado: certificadoState })
+    });
+    const data = await res.json();
+
+    if (data.status === "ok" && data.certificado) {
+      certificadoState = data.certificado;
+      poblarFormularioDesdeState();
+      mostrarToast("Auto-rellenado por SSH/Telnet completado con éxito.", "success");
+      
+      // Cambiar automáticamente de pestaña: "Auto-relleno Rápido" -> "1. Datos generales"
+      activarSeccionTab("generales");
+      document.querySelectorAll(".tab-btn").forEach(t => {
+        if (t.dataset.tab === "generales") t.classList.add("active");
+        else t.classList.remove("active");
+      });
+    } else {
+      mostrarToast(`Error SSH: ${data.mensaje || "No se pudo consultar el equipo remoto"}`, "error");
+    }
+  } catch (err) {
+    mostrarToast(`Error de conexión SSH: ${err.message}`, "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+function copiarComandoPortapapeles() {
+  const cmdInput = document.getElementById("codeCommandCopy");
+  if (cmdInput) {
+    cmdInput.select();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(cmdInput.value).then(() => {
+        mostrarToast("Comando copiado al portapapeles", "success");
+      });
+    } else {
+      document.execCommand("copy");
+      mostrarToast("Comando copiado", "success");
+    }
+  }
+}
+
+function setupNavButtons() {
+  document.addEventListener("click", (e) => {
+    const prevBtn = e.target.closest(".nav-prev-btn");
+    const nextBtn = e.target.closest(".nav-next-btn");
+
+    if (prevBtn) {
+      const targetTab = prevBtn.dataset.prev;
+      activarSeccionTab(targetTab);
+      document.querySelectorAll(".tab-btn").forEach(t => {
+        if (t.dataset.tab === targetTab) t.classList.add("active");
+        else t.classList.remove("active");
+      });
+    } else if (nextBtn) {
+      const targetTab = nextBtn.dataset.next;
+      activarSeccionTab(targetTab);
+      document.querySelectorAll(".tab-btn").forEach(t => {
+        if (t.dataset.tab === targetTab) t.classList.add("active");
+        else t.classList.remove("active");
+      });
+    }
+  });
 }
 
 async function guardarAvance() {
@@ -2007,7 +2330,7 @@ async function guardarAvance() {
     const data = await res.json();
 
     if (data.status === "ok") {
-      mostrarToast("✅ Certificado guardado exitosamente.", "success");
+      mostrarToast("Certificado guardado exitosamente.", "success");
       cargarListaCertificadosHeader();
     }
   } catch (err) {
@@ -2038,7 +2361,7 @@ async function ejecutarRevisorEquipos() {
   const btn = document.getElementById("btnEjecutarRevisor");
   const origText = btn.textContent;
   btn.disabled = true;
-  btn.textContent = "⌛ Ejecutando revisión...";
+  btn.textContent = "Ejecutando revisión...";
 
   try {
     const response = await fetch("/certificado/api/revisor/verificar", {
@@ -2073,7 +2396,7 @@ async function ejecutarRevisorEquipos() {
       if (data.resultado.error) {
         mostrarToast(`Revisión completada con observaciones: ${data.resultado.error}`, "warning");
       } else {
-        mostrarToast("✅ Verificación completada y formulario autollenado con éxito", "success");
+        mostrarToast("Verificación completada y formulario autollenado con éxito", "success");
       }
     } else {
       mostrarToast(`Error: ${data.mensaje || "No se pudo realizar la revisión"}`, "error");
@@ -2221,7 +2544,7 @@ async function copiarPlantillaRevisor() {
     return;
   }
   navigator.clipboard.writeText(txt).then(() => {
-    mostrarToast("📋 Plantilla copiada al portapapeles con éxito", "success");
+    mostrarToast("Plantilla copiada al portapapeles con éxito", "success");
   }).catch(() => {
     mostrarToast("No se pudo copiar automáticamente al portapapeles", "error");
   });
@@ -2264,7 +2587,7 @@ function autoRellenarDesdeRevisor() {
       certificadoState.datos_generales.location = centro.toLowerCase().replace(/[^a-z0-9_-]/g, "");
       certificadoState.datos_generales.nombre_centro = centro.toUpperCase();
       poblarFormularioDesdeState();
-      mostrarToast("✅ Datos principales actualizados en la ficha del certificado", "success");
+      mostrarToast("Datos principales actualizados en la ficha del certificado", "success");
     } else {
       mostrarToast("Ingrese al menos el nombre del centro para autorellenar", "warning");
     }
@@ -2278,7 +2601,7 @@ function autoRellenarDesdeRevisor() {
     certificadoState.datos_generales.nombre_centro = r.centro.toUpperCase();
   }
   poblarFormularioDesdeState();
-  mostrarToast("✅ Ficha de certificado actualizada desde el Revisor", "success");
+  mostrarToast("Ficha de certificado actualizada desde el Revisor", "success");
 }
 
 async function actualizarVistaPreviaHTMLRevisor() {
@@ -2378,8 +2701,8 @@ function mostrarTextoPlanoEnPanelDerecho() {
   liveSheet.innerHTML = `
     <div style="background: #ffffff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-height: 800px; font-family: sans-serif;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid #002d4b; padding-bottom: 8px;">
-        <h3 style="margin: 0; color: #002d4b; font-size: 16px; text-transform: uppercase;">📋 Vista Texto Plano</h3>
-        <button class="btn btn-small btn-secondary" onclick="navigator.clipboard.writeText(document.getElementById('preTextoPlanoDerecho').innerText); mostrarToast('📋 Texto plano copiado', 'success');">Copiar Texto</button>
+        <h3 style="margin: 0; color: #002d4b; font-size: 16px; text-transform: uppercase;">Vista Texto Plano</h3>
+        <button class="btn btn-small btn-secondary" onclick="navigator.clipboard.writeText(document.getElementById('preTextoPlanoDerecho').innerText); mostrarToast('Texto plano copiado', 'success');">Copiar Texto</button>
       </div>
       <pre id="preTextoPlanoDerecho" style="background: #1e293b; color: #f8fafc; padding: 16px; border-radius: 6px; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.5; overflow-x: auto; white-space: pre-wrap; word-break: break-word;">${htmlEscapeAttr(textoPlano || "Sin texto disponible.")}</pre>
     </div>
@@ -2442,7 +2765,7 @@ async function ejecutarIngresoTecnico() {
   const btn = document.getElementById("btnEjecutarIngresoTecnico");
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = "⏳ Consultando / Generando...";
+    btn.innerHTML = "Consultando / Generando...";
   }
 
   try {
@@ -2477,13 +2800,13 @@ async function ejecutarIngresoTecnico() {
       actualizarFrameDocumentoIngresoLive();
       actualizarVistaPreviaDerechaPorModulo();
 
-      mostrarToast("✅ Información para ingreso de técnico cargada con éxito", "success");
+      mostrarToast("Información para ingreso de técnico cargada con éxito", "success");
     } else {
-      mostrarToast("⚠️ " + (data.mensaje || "Error al procesar consulta"), "error");
+      mostrarToast("" + (data.mensaje || "Error al procesar consulta"), "error");
     }
   } catch (err) {
     console.error("Error en consulta ingreso técnico:", err);
-    mostrarToast("❌ Error de red o servidor al ejecutar consulta", "error");
+    mostrarToast("Error de red o servidor al ejecutar consulta", "error");
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -2492,7 +2815,7 @@ async function ejecutarIngresoTecnico() {
   }
 }
 
-async function generarPlantillaIngreso() {
+async function generarPlantillaIngreso(esSilencioso = false) {
   const host = document.getElementById("ingreso_host").value.trim();
   const clave_pc = document.getElementById("ingreso_clave_pc").value.trim() || "No configurada";
   document.getElementById("ingreso_clave_pc").value = clave_pc;
@@ -2546,7 +2869,9 @@ async function generarPlantillaIngreso() {
       };
       actualizarFrameDocumentoIngresoLive();
       actualizarVistaPreviaDerechaPorModulo();
-      mostrarToast("✅ Plantilla y Documento Live actualizados", "success");
+      if (!esSilencioso) {
+        mostrarToast("Plantilla y Documento Live actualizados", "success");
+      }
     }
   } catch (err) {
     console.error("Error al generar plantilla ingreso:", err);
@@ -2567,7 +2892,7 @@ function mostrarVistaPreviaIngresoDerecha() {
   if (ultimoResultadoIngreso && ultimoResultadoIngreso.documento_live_html) {
     liveSheet.innerHTML = `<iframe srcdoc="${htmlEscapeAttr(ultimoResultadoIngreso.documento_live_html)}" style="width: 100%; height: 850px; border: none; border-radius: 8px;" title="Live Ingreso Técnico"></iframe>`;
   } else {
-    liveSheet.innerHTML = `<div style="padding: 40px; text-align: center; color: #64748b; font-family: sans-serif;">⏳ Generando vista previa de Ingreso Técnico...</div>`;
+    liveSheet.innerHTML = `<div style="padding: 40px; text-align: center; color: #64748b; font-family: sans-serif;">Generando vista previa de Ingreso Técnico...</div>`;
     generarPlantillaIngreso();
   }
 }
@@ -2580,13 +2905,13 @@ function copiarPlantillaIngreso() {
       txt = document.getElementById("txtPlantillaIngresoTecnico").value;
       if (txt) {
         navigator.clipboard.writeText(txt).then(() => {
-          mostrarToast("📋 Plantilla de Ingreso de Técnico copiada al portapapeles", "success");
+          mostrarToast("Plantilla de Ingreso de Técnico copiada al portapapeles", "success");
         });
       }
     }, 250);
   } else {
     navigator.clipboard.writeText(txt).then(() => {
-      mostrarToast("📋 Plantilla de Ingreso de Técnico copiada al portapapeles", "success");
+      mostrarToast("Plantilla de Ingreso de Técnico copiada al portapapeles", "success");
     });
   }
 }

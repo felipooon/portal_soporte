@@ -15,7 +15,7 @@
   <!-- Encabezado Superior Corporativo Innovex -->
   <header class="app-header">
     <div class="logo-title">
-      <img src="{% static 'certificado/logo.png' %}" alt="Innovex Chile" class="brand-logo">
+      <img src="logo.png" alt="Innovex Chile" class="brand-logo">
       <div class="divider"></div>
       <div>
         <h1 style="margin: 0; font-size: 18px;">SUITE DE SOPORTE TÉCNICO</h1>
@@ -72,19 +72,67 @@
         <!-- TAB 1: AUTO-RELLENO RÁPIDO -->
         <section class="tab-content active" id="tab-autofill">
           <div class="card">
-            <h2>Auto-rellenado Inteligente por Consola</h2>
-            <p class="subtitle">Pegue la salida de terminal (<code>hostnamectl</code>, <code>ifconfig</code>, <code>config_location.json</code>, <code>cmd status</code>, <code>cmd motes</code>) para rellenar automáticamente la ficha.</p>
-            
-            <textarea id="autofillText" class="code-input" placeholder="Pegue la salida de consola aquí...
+            <h2>Auto-rellenado Inteligente del Documento</h2>
+            <p class="subtitle" style="font-size: 13px; line-height: 1.5; color: var(--text-muted); margin-bottom: 15px;">
+              <strong>¿Cómo funciona?</strong> Puedes completar la ficha del certificado automáticamente de dos formas muy sencillas:
+              <br>
+              <strong>Opción A:</strong> Conéctate directamente por red ingresando la IP/DNS de la máquina.
+              <br>
+              <strong>Opción B:</strong> Copia la información desde la consola de la máquina remota y pégala en el recuadro inferior.
+            </p>
 
+            <!-- Opción A: Conexión Directa SSH -->
+            <div class="subcard" style="background: rgba(2, 132, 199, 0.05); border: 1px solid rgba(2, 132, 199, 0.2); border-radius: 8px; padding: 14px; margin-bottom: 20px;">
+              <h3 style="margin-top: 0; font-size: 14px; color: #0284c7;">Conexión Automática SSH / Red</h3>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Ingresa los datos de acceso para que el sistema consulte los datos de la máquina por ti:</p>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>IP / DNS del Equipo</label>
+                  <input type="text" id="ssh_autofill_host" placeholder="ej. ce-tranqui1.acuimatic.com o 10.9.18.37">
+                </div>
+                <div class="form-group">
+                  <label>Usuario SSH</label>
+                  <input type="text" id="ssh_autofill_user" value="innovex">
+                </div>
+                <div class="form-group">
+                  <label>Contraseña SSH</label>
+                  <input type="password" id="ssh_autofill_pass" value="CERMAQ@sh20">
+                </div>
+                <div class="form-group">
+                  <label>Puerto SSH</label>
+                  <input type="text" id="ssh_autofill_port" value="22">
+                </div>
+                <div class="form-group">
+                  <label>Puerto Telnet</label>
+                  <input type="text" id="ssh_autofill_telnet_port" value="9999">
+                </div>
+              </div>
+              <div style="margin-top: 10px;">
+                <button class="btn btn-primary btn-small" id="btnEjecutarSSHAutofill">Conectar & Autorellenar</button>
+              </div>
+            </div>
+
+            <!-- Opción B: Copiar y Pegar Comandos de Consola -->
+            <div class="subcard" style="border: 1px dashed var(--border-color); border-radius: 8px; padding: 14px; margin-bottom: 15px;">
+              <h3 style="margin-top: 0; font-size: 14px;">Comando de Diagnóstico (Copiar y Pegar en la Máquina)</h3>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Copia este comando único, ejecútalo en la terminal del cliente y pega el resultado abajo:</p>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" readonly id="codeCommandCopy" value="echo '=== HOSTNAMECTL ===' && hostnamectl && echo '=== UNAME ===' && uname -a && echo '=== IFCONFIG ===' && (ifconfig || ip a) && echo '=== STATUS ===' && (echo -e 'cmd status\nquit' | nc localhost 9999 2>/dev/null || echo -e 'status\nquit' | nc localhost 2000 2>/dev/null || true)" style="font-family: monospace; font-size: 11px; flex: 1; background: var(--bg-tertiary); cursor: pointer;" onclick="this.select();">
+                <button class="btn btn-secondary btn-small" onclick="copiarComandoPortapapeles()">📋 Copiar</button>
+              </div>
+            </div>
+            
+            <textarea id="autofillText" class="code-input" rows="8" placeholder="Pega el resultado del comando o las salidas de terminal aquí...
+            
 Ejemplo:
 innovex@ce-tranqui1:~$ hostnamectl
 Static hostname: ce-tranqui1
 Operating System: Ubuntu 24.04.4 LTS
 ..."></textarea>
             
-            <div class="card-footer">
-              <button class="btn btn-primary" id="btnProcesarAutofill">Parsear & Autorellenar Campos</button>
+            <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+              <button class="btn btn-primary" id="btnProcesarAutofill">Autorellenar Documento</button>
+              <button class="btn btn-secondary nav-next-btn" data-next="generales">Ir a 1. Datos Generales →</button>
             </div>
           </div>
         </section>
@@ -113,6 +161,10 @@ Operating System: Ubuntu 24.04.4 LTS
                 <select id="gen_encargado_select"></select>
               </div>
               <div class="form-group">
+                <label>Área</label>
+                <input type="text" id="gen_area" placeholder="ej. Producción / Cultivo / Operaciones">
+              </div>
+              <div class="form-group">
                 <label>Técnico de Visita</label>
                 <select id="gen_tecnico_select"></select>
                 <input type="text" id="gen_tecnico_custom" placeholder="Nombre técnico..." class="input-sub" style="display: none;">
@@ -126,8 +178,8 @@ Operating System: Ubuntu 24.04.4 LTS
                 <input type="text" id="gen_fecha_instalacion" placeholder="DD/MM/AAAA">
               </div>
               <div class="form-group">
-                <label>Coordenadas GPS</label>
-                <input type="text" id="gen_coordenadas" placeholder="-42.749224 -73.580710">
+                <label>Coordenadas GPS <span class="required-star">*</span></label>
+                <input type="text" id="gen_coordenadas" placeholder="-42.749224 -73.580710" required>
               </div>
               <div class="form-group">
                 <label>Barrio / Zona</label>
@@ -146,6 +198,15 @@ Operating System: Ubuntu 24.04.4 LTS
                 <input type="text" id="gen_telefono_centro" placeholder="+56 9 1234 5678">
               </div>
             </div>
+
+            <p style="font-size: 11px; color: #ef4444; margin-top: 15px; font-weight: 500;">
+              * Campos obligatorios para la compilación del certificado oficial.
+            </p>
+
+            <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+              <button class="btn btn-secondary nav-prev-btn" data-prev="autofill">← Volver a Auto-relleno</button>
+              <button class="btn btn-primary nav-next-btn" data-next="infraestructura">Ir a 2. Infraestructura & Acceso →</button>
+            </div>
           </div>
         </section>
 
@@ -154,6 +215,10 @@ Operating System: Ubuntu 24.04.4 LTS
           <div class="card">
             <h2>2. Infraestructura del PC de Monitoreo & Conectividad</h2>
             <div class="form-grid">
+              <div class="form-group">
+                <label>Área / Ubicación Interna</label>
+                <input type="text" id="infra_area" placeholder="ej. Pontón / Casa de Fuerza / Oficina">
+              </div>
               <div class="form-group">
                 <label>Categoría PC</label>
                 <select id="infra_categoria">
@@ -173,17 +238,25 @@ Operating System: Ubuntu 24.04.4 LTS
               </div>
               <div class="form-group">
                 <label>Sistema Operativo</label>
-                <select id="infra_so_select">
-                  <option value="Ubuntu 24.04 LTS">Ubuntu 24.04 LTS</option>
-                  <option value="Ubuntu 22.04 LTS">Ubuntu 22.04 LTS</option>
-                  <option value="Ubuntu 20.04 LTS">Ubuntu 20.04 LTS</option>
-                  <option value="Debian">Debian</option>
-                  <option value="Otro...">Otro...</option>
-                </select>
+                <input type="text" id="infra_so_select" list="dl_so_list" placeholder="ej. Ubuntu 24.04.4 LTS">
+                <datalist id="dl_so_list">
+                  <option value="Ubuntu 24.04 LTS">
+                  <option value="Ubuntu 22.04 LTS">
+                  <option value="Ubuntu 20.04 LTS">
+                  <option value="Debian">
+                </datalist>
+              </div>
+              <div class="form-group">
+                <label>Kernel Linux</label>
+                <input type="text" id="infra_kernel" placeholder="ej. 6.8.0-31-generic">
               </div>
               <div class="form-group">
                 <label>MAC Ethernet</label>
                 <input type="text" id="infra_mac_ethernet" placeholder="FC:5C:EE:D9:84:CD">
+              </div>
+              <div class="form-group">
+                <label>MAC Wi-Fi</label>
+                <input type="text" id="infra_mac_wifi" placeholder="ej. A4:B1:C2:D3:E4:F5">
               </div>
               <div class="form-group">
                 <label>ID Equipo / PC</label>
@@ -213,6 +286,8 @@ Operating System: Ubuntu 24.04.4 LTS
                 <label>Protocolo VPN</label>
                 <select id="acc_protocolo_select">
                   <option value="OpenVPN">OpenVPN</option>
+                  <option value="Cisco AnyConnect">Cisco AnyConnect</option>
+                  <option value="GlobalProtect">GlobalProtect</option>
                   <option value="FortiClient">FortiClient</option>
                   <option value="Otro...">Otro...</option>
                 </select>
@@ -225,6 +300,11 @@ Operating System: Ubuntu 24.04.4 LTS
                 <label>Puerto Server</label>
                 <input type="text" id="acc_puerto_server" placeholder="8888">
               </div>
+            </div>
+
+            <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+              <button class="btn btn-secondary nav-prev-btn" data-prev="generales">← Volver a Datos Generales</button>
+              <button class="btn btn-primary nav-next-btn" data-next="camara">Ir a 3. Cámara & Estación →</button>
             </div>
           </div>
         </section>
@@ -249,6 +329,14 @@ Operating System: Ubuntu 24.04.4 LTS
                   <option value="Davis">Davis</option>
                   <option value="AirMar">AirMar</option>
                 </select>
+              </div>
+              <div class="form-group" id="group_id_estacion" style="display: none;">
+                <label>ID Estación Meteorológica</label>
+                <input type="text" id="cam_id_estacion" placeholder="ej. EST-001 / Davis 6152">
+              </div>
+              <div class="form-group" id="group_altura_estacion" style="display: none;">
+                <label>Altura Aprox. Estación (metros)</label>
+                <input type="text" id="cam_altura_estacion" placeholder="ej. 10">
               </div>
               <div class="form-group" id="group_region_davis" style="display: none;">
                 <label>Región Davis</label>
@@ -281,11 +369,14 @@ Operating System: Ubuntu 24.04.4 LTS
                   <option value="Bala">Bala</option>
                 </select>
               </div>
+              <div class="form-group" id="group_mac_camara" style="display: none;">
+                <label>MAC de la Cámara</label>
+                <input type="text" id="cam_mac_camara" placeholder="ej. 00:12:34:56:78:9A">
+              </div>
               <div class="form-group" id="group_conexion_camara" style="display: none;">
                 <label>Conexión Cámara</label>
                 <select id="cam_conexion_camara">
                   <option value="Switch PoE">Switch PoE</option>
-                  <option value="Directa PC">Directa PC</option>
                   <option value="PoE + HUB">PoE + HUB</option>
                 </select>
               </div>
@@ -313,6 +404,11 @@ Operating System: Ubuntu 24.04.4 LTS
                 </div>
               </div>
             </div>
+
+            <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+              <button class="btn btn-secondary nav-prev-btn" data-prev="infraestructura">← Volver a Infraestructura</button>
+              <button class="btn btn-primary nav-next-btn" data-next="abiotico_ubicaciones">Ir a 4. Monitoreo Abiótico →</button>
+            </div>
           </div>
         </section>
 
@@ -320,37 +416,44 @@ Operating System: Ubuntu 24.04.4 LTS
         <section class="tab-content" id="tab-abiotico_ubicaciones">
           <div class="card">
             <h2>4. Monitoreo Abiótico (Antena Jennic)</h2>
-            <div class="form-grid">
-              <div class="form-group">
-                <label>¿Monitoreo Abiótico Instalado?</label>
-                <select id="ab_instalado">
-                  <option value="Si">Si</option>
-                  <option value="No">No</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Tipo Antena</label>
-                <select id="ab_tipo_antena">
-                  <option value="Outdoor">Outdoor</option>
-                  <option value="Indoor">Indoor</option>
-                  <option value="Panel">Panel</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Ubicación de Antena</label>
-                <input type="text" id="ab_ubicacion_antena" placeholder="Techo Pontón / Púlpito">
-              </div>
-              <div class="form-group">
-                <label>Versión Firmware</label>
-                <input type="text" id="ab_version" placeholder="v2.0.2">
-              </div>
-              <div class="form-group">
-                <label>MAC Antena</label>
-                <input type="text" id="ab_mac" placeholder="00:15:8D:00:09:24:53:F7">
-              </div>
-              <div class="form-group">
-                <label>Pan ID</label>
-                <input type="text" id="ab_panid" placeholder="2020">
+            <div class="form-group margin-bottom">
+              <label>¿Monitoreo Abiótico Instalado?</label>
+              <select id="ab_instalado">
+                <option value="Si">Si</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+
+            <div id="abiotico_fields_container">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Tipo Antena</label>
+                  <select id="ab_tipo_antena">
+                    <option value="Outdoor">Outdoor</option>
+                    <option value="Indoor">Indoor</option>
+                    <option value="Panel">Panel</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Ubicación de Antena</label>
+                  <input type="text" id="ab_ubicacion_antena" placeholder="Techo Pontón / Púlpito">
+                </div>
+                <div class="form-group">
+                  <label>Versión Firmware</label>
+                  <input type="text" id="ab_version" placeholder="v2.0.2">
+                </div>
+                <div class="form-group">
+                  <label>MAC Antena</label>
+                  <input type="text" id="ab_mac" placeholder="00:15:8D:00:09:24:53:F7">
+                </div>
+                <div class="form-group">
+                  <label>Pan ID</label>
+                  <input type="text" id="ab_panid" placeholder="2020">
+                </div>
+                <div class="form-group">
+                  <label>Cantidad de Equipos Asociados</label>
+                  <input type="text" id="ab_cantidad_equipos_asociados" placeholder="ej. 10">
+                </div>
               </div>
             </div>
           </div>
@@ -360,7 +463,7 @@ Operating System: Ubuntu 24.04.4 LTS
               <h2>Equipos Jennic Detectados (cmd motes)</h2>
             </div>
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
-              Equipos y MACs importados desde la consola (<code>cmd motes</code> / <code>cmd status</code>). Puede usar el selector o presionar <strong>📋 Copiar</strong> para asignarlas fácilmente en una ubicación o repuesto.
+              Equipos y MACs importados desde la consola (<code>cmd motes</code> / <code>cmd status</code>). Puede usar el selector o presionar <strong>Copiar</strong> para asignarlas fácilmente en una ubicación o repuesto.
             </p>
             <div id="contenedorMotesList"></div>
           </div>
@@ -442,6 +545,11 @@ Operating System: Ubuntu 24.04.4 LTS
 
               <div id="listaRepuestos" class="items-list"></div>
             </div>
+
+            <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+              <button class="btn btn-secondary nav-prev-btn" data-prev="camara">← Volver a Cámara & Estación</button>
+              <button class="btn btn-primary nav-next-btn" data-next="activacion_obs">Ir a 5. Activación & Observaciones →</button>
+            </div>
           </div>
         </section>
 
@@ -518,7 +626,7 @@ Operating System: Ubuntu 24.04.4 LTS
                 </select>
               </div>
               <div class="form-group">
-                <label>Archivos .dat Generándose</label>
+                <label>Archivos .dat Generándose y guardándose</label>
                 <select id="chk_archivos_dat">
                   <option value="OK">OK (Conforme)</option>
                   <option value="Pendiente">Pendiente</option>
@@ -564,6 +672,11 @@ Operating System: Ubuntu 24.04.4 LTS
             <h2>Observaciones y Notas Libres</h2>
             <p class="subtitle">Deje este campo vacío para que en el PDF generado aparezca un recuadro limpio en blanco listo para escritura a mano y firma del cliente.</p>
             <textarea id="obs_texto" class="text-input" placeholder="Comentarios u observaciones opcionales..."></textarea>
+
+            <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+              <button class="btn btn-secondary nav-prev-btn" data-prev="abiotico_ubicaciones">← Volver a Monitoreo Abiótico</button>
+              <button class="btn btn-primary nav-next-btn" data-next="evidencias_alarmas">Ir a 6. Evidencias & Alarmas →</button>
+            </div>
           </div>
         </section>
 
@@ -619,9 +732,14 @@ Operating System: Ubuntu 24.04.4 LTS
                       <th>Acción</th>
                     </tr>
                   </thead>
-                  <tbody id="tbodyAlarmas"></tbody>
+              <tbody id="tbodyAlarmas"></tbody>
                 </table>
               </div>
+            </div>
+
+            <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+              <button class="btn btn-secondary nav-prev-btn" data-prev="activacion_obs">← Volver a Activación & Observaciones</button>
+              <button class="btn btn-primary" onclick="document.getElementById('btnGenerarPDF').click()">📄 Compilar PDF Oficial</button>
             </div>
           </div>
         </section>
