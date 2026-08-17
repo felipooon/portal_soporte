@@ -21,7 +21,14 @@ def correos_masivos(request):
             messages.error(request, 'El personal seleccionado no existe.')
             return redirect('correos_masivos')
 
-        clientes_activos = ClienteCentro.objects.filter(activo=True)
+        correo_prueba = request.POST.get('correo_prueba', '').strip()
+        if correo_prueba:
+            class DummyCliente:
+                correo = correo_prueba
+            clientes_activos = [DummyCliente()]
+        else:
+            clientes_activos = ClienteCentro.objects.filter(activo=True)
+            
         subject = f"ASISTENCIA SOPORTE INNOVEX FIN DE SEMANA - SEMANA {semana}"
         
         emails_enviados = 0
@@ -42,7 +49,7 @@ def correos_masivos(request):
             msg = EmailMultiAlternatives(
                 subject=subject,
                 body=text_content,
-                from_email='soporte@innovex.cl',
+                from_email=personal.correo,
                 to=[cliente.correo],
             )
             msg.attach_alternative(html_content, "text/html")

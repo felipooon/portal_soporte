@@ -120,11 +120,13 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Email
-# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
+import os
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+# Email Settings (IONOS)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.1und1.de'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+# Se leen desde el entorno para no subir contraseñas a GitHub
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'tu-correo@innovex.cl')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'tu-contraseña')
