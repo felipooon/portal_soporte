@@ -19,7 +19,7 @@ from django.http import HttpResponse
 def index(request):
     html = render_to_string('certificado/index.html', request=request)
     # Inyectar dinámicamente el botón de volver al portal para no modificar el HTML original
-    boton_html = '<a href="/" class="btn btn-secondary btn-small" style="background:#003459; color:white; border-color:#003459;">🏠 Volver al Portal</a>'
+    boton_html = '<a href="/" class="btn btn-secondary btn-small">🏠 Volver al Menú</a>'
     html = html.replace(
         '<div class="header-actions">',
         f'<div class="header-actions">\n      {boton_html}'
