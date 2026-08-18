@@ -188,7 +188,7 @@ def correos_masivos(request):
                 body=text_content,
                 from_email=correo_remitente,
                 to=destinatarios,
-                cc=['soporte@innovex.cl'],
+                cc=['soporte@innovex.cl', 'jefe.area@innovex.cl'],
                 reply_to=[correo_remitente],
             )
             msg.attach_alternative(html_content, "text/html")
