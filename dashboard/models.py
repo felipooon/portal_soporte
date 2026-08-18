@@ -14,17 +14,17 @@ class PersonalSoporte(models.Model):
         verbose_name_plural = 'Personal de Soporte'
 
 
-class ClienteCentro(models.Model):
+class Empresa(models.Model):
     nombre = models.CharField(max_length=200)
-    correo = models.EmailField()
-    activo = models.BooleanField(default=True)
+    correos = models.TextField(help_text="Correos separados por punto y coma (;) o comas (,)")
+    activa = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.nombre} ({self.correo})"
+        return f"{self.nombre} ({len(self.correos.split(','))} correos)"
 
     class Meta:
-        verbose_name = 'Cliente / Centro'
-        verbose_name_plural = 'Clientes / Centros'
+        verbose_name = 'Empresa'
+        verbose_name_plural = 'Empresas'
 
 class Bitacora(models.Model):
     texto = models.TextField(blank=True, default='')

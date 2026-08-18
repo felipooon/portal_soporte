@@ -5,7 +5,7 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.http import JsonResponse
 from django.conf import settings
-from .models import PersonalSoporte, ClienteCentro, Bitacora
+from .models import PersonalSoporte, Empresa, Bitacora
 import datetime
 import json
 import requests
@@ -147,16 +147,17 @@ def correos_masivos(request):
 
         correo_prueba = request.POST.get('correo_prueba', '').strip()
         if correo_prueba:
-            class DummyCliente:
-                correo = correo_prueba
-            clientes_activos = [DummyCliente()]
+            class DummyEmpresa:
+                nombre = "Prueba"
+                correos = correo_prueba
+            empresas_activas = [DummyEmpresa()]
         else:
-            clientes_activos = ClienteCentro.objects.filter(activo=True)
+            empresas_activas = Empresa.objects.filter(activa=True)
             
         subject = f"ASISTENCIA SOPORTE INNOVEX FIN DE SEMANA - SEMANA {semana}"
         
         emails_enviados = 0
-        for i, cliente in enumerate(clientes_activos):
+        for i, empresa in enumerate(empresas_activas):
             html_content = render_to_string('emails/turno_fin_semana.html', {
                 'fecha_sabado': fecha_sabado,
                 'fecha_domingo': fecha_domingo,
@@ -175,19 +176,27 @@ def correos_masivos(request):
             else:
                 correo_remitente = f"{nombre_parts[0]}@innovex.cl"
             
+            # Parse all emails from the comma-separated or semicolon-separated list
+            import re
+            raw_emails = empresa.correos.replace(';', ',')
+            destinatarios = [e.strip() for e in raw_emails.split(',') if e.strip()]
+            if not destinatarios:
+                continue
+
             # Use EmailMultiAlternatives for HTML emails
             msg = EmailMultiAlternatives(
                 subject=subject,
                 body=text_content,
                 from_email=correo_remitente,
-                to=[cliente.correo],
+                to=destinatarios,
+                cc=['soporte@innovex.cl'],
                 reply_to=[correo_remitente],
             )
             msg.attach_alternative(html_content, "text/html")
             msg.send()
             emails_enviados += 1
             
-        messages.success(request, f'Se enviaron {emails_enviados} correos. Puedes previsualizar el HTML generado en el archivo "test_correo_generado.html".')
+        messages.success(request, f'Se enviaron correos masivos a {emails_enviados} empresas agrupadas. Puedes previsualizar el HTML generado en el archivo "test_correo_generado.html".')
         return redirect('correos_masivos')
 
     # GET request: load personal list

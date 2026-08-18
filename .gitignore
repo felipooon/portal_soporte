@@ -19,3 +19,8 @@ venv/
 .idea/
 .gemini/
 storage/
+
+# Private data
+static/direcciones info fds
+load_emails.py
+

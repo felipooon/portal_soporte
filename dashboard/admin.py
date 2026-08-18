@@ -1,6 +1,13 @@
 from django.contrib import admin
-from .models import PersonalSoporte, ClienteCentro, Bitacora
+from .models import PersonalSoporte, Empresa, Bitacora
 
-admin.site.register(PersonalSoporte)
-admin.site.register(ClienteCentro)
+@admin.register(PersonalSoporte)
+class PersonalSoporteAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'cargo', 'telefono', 'correo')
+
+@admin.register(Empresa)
+class EmpresaAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'activa')
+    search_fields = ('nombre', 'correos')
+
 admin.site.register(Bitacora)
