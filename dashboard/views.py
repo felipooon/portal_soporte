@@ -285,9 +285,14 @@ def music_control(request):
     env = get_dbus_env()
 
     if action == 'search' and query:
-        url = f"https://www.youtube.com/results?search_query={query}"
         try:
-            subprocess.Popen(['xdg-open', url], env=env)
+            # Stop any existing background music first
+            subprocess.run(['pkill', '-f', 'mpv --no-video'], env=env)
+            
+            # Start mpv purely in the background via yt-dlp
+            command = ['mpv', '--no-video', f'ytdl://ytsearch1:{query}']
+            subprocess.Popen(command, env=env, start_new_session=True)
+            
             return JsonResponse({'status': 'ok'})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
