@@ -147,10 +147,22 @@ def correos_masivos(request):
 
         correo_prueba = request.POST.get('correo_prueba', '').strip()
         if correo_prueba:
+            class DummyDestinatario:
+                def __init__(self, correo):
+                    self.correo = correo
+            
+            class DummyManager:
+                def __init__(self, correos_str):
+                    self.correos = [c.strip() for c in correos_str.replace(';', ',').split(',') if c.strip()]
+                def filter(self, **kwargs):
+                    return [DummyDestinatario(c) for c in self.correos]
+
             class DummyEmpresa:
                 nombre = "Prueba"
-                correos = correo_prueba
-            empresas_activas = [DummyEmpresa()]
+                def __init__(self, correos_str):
+                    self.destinatarios = DummyManager(correos_str)
+                    
+            empresas_activas = [DummyEmpresa(correo_prueba)]
         else:
             empresas_activas = Empresa.objects.filter(activa=True)
             
