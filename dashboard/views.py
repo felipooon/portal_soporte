@@ -209,10 +209,13 @@ def get_dbus_env():
     env = os.environ.copy()
     if 'DBUS_SESSION_BUS_ADDRESS' not in env:
         env['DBUS_SESSION_BUS_ADDRESS'] = f'unix:path=/run/user/{uid}/bus'
+    if 'DISPLAY' not in env:
+        env['DISPLAY'] = ':0'
     return env
 
 def music_control(request):
     action = request.GET.get('action')
+    query = request.GET.get('query', '')
     commands = {
         'volup': ['pactl', 'set-sink-volume', '@DEFAULT_SINK@', '+5%'],
         'voldn': ['pactl', 'set-sink-volume', '@DEFAULT_SINK@', '-5%'],
@@ -222,9 +225,18 @@ def music_control(request):
         'prev': ['playerctl', 'previous']
     }
     
+    env = get_dbus_env()
+
+    if action == 'search' and query:
+        url = f"https://www.youtube.com/results?search_query={query}"
+        try:
+            subprocess.Popen(['xdg-open', url], env=env)
+            return JsonResponse({'status': 'ok'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+
     if action in commands:
         try:
-            env = get_dbus_env()
             subprocess.run(commands[action], env=env, check=True)
             return JsonResponse({'status': 'ok'})
         except Exception as e:

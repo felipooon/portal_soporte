@@ -233,8 +233,19 @@
         event.preventDefault();
         const query = document.getElementById('yt-search').value.trim();
         if (query) {
-            const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-            window.open(url, '_blank'); // Opens YouTube search in a new tab
+            fetch(`/api/music/control/?action=search&query=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        showNotification('Buscando en el PC Host: ' + query);
+                        document.getElementById('yt-search').value = '';
+                    } else {
+                        showNotification('Error al buscar: ' + data.message, true);
+                    }
+                })
+                .catch(err => {
+                    showNotification('Error de conexión', true);
+                });
         }
     }
 </script>
