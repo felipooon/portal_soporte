@@ -11,29 +11,39 @@
     </a>
 </header>
 
-<div style="display: flex; flex-direction: column; gap: 20px; min-height: 120vh; width: 100%;">
-    <!-- Columna Llancacheo -->
-    <div class="card glass-effect" style="flex: 1; display: flex; flex-direction: column; padding: 15px; min-height: 50vh;">
-        <h3 style="margin-top: 0; text-align: center; color: var(--text-primary); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-            <span>📍 Llancacheo Inyección</span>
-            <a href="http://ce-llancacheo-inyeccion.acuimatic.com:8000/" target="_blank" style="font-size: 0.8rem; background: #e74c3c; color: white; padding: 5px 10px; border-radius: 5px; text-decoration: none;">Abrir en nueva pestaña ↗</a>
-        </h3>
-        <div style="text-align: center; color: var(--warning); font-size: 0.8rem; margin-bottom: 10px;">Si no se ve el contenido, usa el botón rojo (El sitio origen bloquea los iframes por seguridad).</div>
-        <iframe src="http://ce-llancacheo-inyeccion.acuimatic.com:8000/" 
-                style="flex: 1; border: none; border-radius: 8px; background: #fff; min-height: 400px;" 
-                title="Llancacheo"></iframe>
-    </div>
+<div class="card glass-effect" style="max-width: 600px; margin: 40px auto; padding: 30px; text-align: center;">
+    <h2 style="color: var(--text-primary); margin-top: 0;">🚀 Lanzador Multipantalla</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 30px;">
+        Como los servidores origen bloquean la visualización incrustada por seguridad, 
+        hemos creado este lanzador. Al presionar el botón, se abrirán dos ventanas independientes 
+        que se acomodarán automáticamente (una a la izquierda y otra a la derecha) para que puedas 
+        monitorearlas al mismo tiempo.
+    </p>
 
-    <!-- Columna Aulen -->
-    <div class="card glass-effect" style="flex: 1; display: flex; flex-direction: column; padding: 15px; min-height: 50vh;">
-        <h3 style="margin-top: 0; text-align: center; color: var(--text-primary); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-            <span>📍 Aulen Inyección</span>
-            <a href="http://ce-aulen-inyeccion.acuimatic.com:8000/" target="_blank" style="font-size: 0.8rem; background: #e74c3c; color: white; padding: 5px 10px; border-radius: 5px; text-decoration: none;">Abrir en nueva pestaña ↗</a>
-        </h3>
-        <div style="text-align: center; color: var(--warning); font-size: 0.8rem; margin-bottom: 10px;">Si no se ve el contenido, usa el botón rojo (El sitio origen bloquea los iframes por seguridad).</div>
-        <iframe src="http://ce-aulen-inyeccion.acuimatic.com:8000/" 
-                style="flex: 1; border: none; border-radius: 8px; background: #fff; min-height: 400px;" 
-                title="Aulen"></iframe>
-    </div>
+    <button onclick="launchMonitors()" style="background: #f1c40f; color: #1a1a2e; border: none; padding: 15px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 10px; cursor: pointer; transition: 0.3s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;">
+        <span style="font-size: 1.5rem;">🖥️</span> Iniciar Monitoreo Dual
+    </button>
 </div>
+
+<script>
+function launchMonitors() {
+    // Calculamos la mitad del ancho de la pantalla actual
+    const width = window.screen.availWidth / 2;
+    const height = window.screen.availHeight;
+
+    // Ventana Izquierda (Llancacheo)
+    window.open(
+        "http://ce-llancacheo-inyeccion.acuimatic.com:8000/", 
+        "monitor_llancacheo", 
+        `width=${width},height=${height},left=0,top=0,location=no,toolbar=no,menubar=no`
+    );
+
+    // Ventana Derecha (Aulen)
+    window.open(
+        "http://ce-aulen-inyeccion.acuimatic.com:8000/", 
+        "monitor_aulen", 
+        `width=${width},height=${height},left=${width},top=0,location=no,toolbar=no,menubar=no`
+    );
+}
+</script>
 {% endblock %}
