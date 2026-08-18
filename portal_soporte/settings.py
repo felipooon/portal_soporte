@@ -137,7 +137,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 import os
 
 # Email Settings (IONOS)
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_FILE_PATH = os.environ.get('EMAIL_FILE_PATH', BASE_DIR / 'correos_prueba')
 EMAIL_HOST = 'smtp.1und1.de'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
