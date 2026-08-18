@@ -19,7 +19,7 @@
     <div style="margin-bottom: 2rem; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--glass-border);">
         <h3 style="margin-top: 0;">Agregar Nuevo Destinatario</h3>
         <form id="add-form" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
-            <div class="form-group" style="flex: 1; min-width: 200px;">
+            <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
                 <label>Empresa</label>
                 <input type="text" id="new-empresa" placeholder="Nombre de la empresa" required list="empresas-list">
                 <datalist id="empresas-list">
@@ -28,7 +28,7 @@
                     {% endfor %}
                 </datalist>
             </div>
-            <div class="form-group" style="flex: 2; min-width: 250px;">
+            <div class="form-group" style="flex: 2; min-width: 250px; margin-bottom: 0;">
                 <label>Correo Electrónico</label>
                 <input type="email" id="new-correo" placeholder="ejemplo@empresa.cl" required>
             </div>
