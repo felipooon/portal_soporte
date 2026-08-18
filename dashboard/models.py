@@ -16,15 +16,26 @@ class PersonalSoporte(models.Model):
 
 class Empresa(models.Model):
     nombre = models.CharField(max_length=200)
-    correos = models.TextField(help_text="Correos separados por punto y coma (;) o comas (,)")
     activa = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.nombre} ({len(self.correos.split(','))} correos)"
+        return self.nombre
 
     class Meta:
         verbose_name = 'Empresa'
         verbose_name_plural = 'Empresas'
+
+class Destinatario(models.Model):
+    correo = models.EmailField()
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name='destinatarios')
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.correo
+
+    class Meta:
+        verbose_name = 'Destinatario'
+        verbose_name_plural = 'Destinatarios'
 
 class Bitacora(models.Model):
     texto = models.TextField(blank=True, default='')

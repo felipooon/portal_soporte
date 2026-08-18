@@ -1,130 +1,189 @@
 {% extends 'base.html' %}
 
-{% block title %}Gestionar Base de Datos - Innovex Soporte{% endblock %}
+{% block title %}Gestionar Correos - Innovex Soporte{% endblock %}
 
 {% block content %}
 <div class="page-container glass-effect" style="padding: 2rem; border-radius: 1rem; margin-top: 2rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
         <div>
             <h1>Gestionar Correos de Empresas</h1>
-            <p class="subtitle">Activa, desactiva o actualiza la lista de destinatarios por empresa.</p>
+            <p class="subtitle">Lista completa de destinatarios. Puedes filtrarlos, prenderlos/apagarlos o agregar nuevos.</p>
         </div>
         <a href="{% url 'correos_masivos' %}" class="btn" style="background: rgba(255,255,255,0.1);">Volver al Envío</a>
     </div>
     
+    <!-- Add new recipient form -->
     <div style="margin-bottom: 2rem; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--glass-border);">
-        <h3 style="margin-top: 0;">Agregar Nueva Empresa</h3>
+        <h3 style="margin-top: 0;">Agregar Nuevo Destinatario</h3>
         <form id="add-form" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
             <div class="form-group" style="flex: 1; min-width: 200px;">
-                <label>Nombre de la Empresa</label>
-                <input type="text" id="new-name" placeholder="Ej. Salmones Antártica" required>
+                <label>Empresa</label>
+                <input type="text" id="new-empresa" placeholder="Nombre de la empresa" required list="empresas-list">
+                <datalist id="empresas-list">
+                    {% for emp in empresas %}
+                    <option value="{{ emp.nombre }}">
+                    {% endfor %}
+                </datalist>
             </div>
-            <div class="form-group" style="flex: 3; min-width: 300px;">
-                <label>Correos (Separados por coma o punto y coma)</label>
-                <input type="text" id="new-emails" placeholder="ejemplo1@empresa.cl, ejemplo2@empresa.cl" required>
+            <div class="form-group" style="flex: 2; min-width: 250px;">
+                <label>Correo Electrónico</label>
+                <input type="email" id="new-correo" placeholder="ejemplo@empresa.cl" required>
             </div>
-            <button type="submit" class="btn btn-primary" style="height: 48px;">Agregar</button>
+            <button type="submit" class="btn btn-primary" style="height: 48px;">Guardar Correo</button>
         </form>
     </div>
 
-    <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
-        {% for empresa in empresas %}
-        <div class="card glass-effect" style="position: relative; padding: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3 style="margin: 0; font-size: 1.2rem; color: {% if not empresa.activa %}var(--text-secondary){% else %}var(--text-primary){% endif %};">
-                    {{ empresa.nombre }}
-                </h3>
-                <label class="switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
-                    <input type="checkbox" class="toggle-empresa" data-id="{{ empresa.id }}" {% if empresa.activa %}checked{% endif %} style="opacity: 0; width: 0; height: 0;">
-                    <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: {% if empresa.activa %}var(--success){% else %}#ccc{% endif %}; transition: .4s; border-radius: 24px;">
-                        <span style="position: absolute; content: ''; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; transform: {% if empresa.activa %}translateX(26px){% else %}translateX(0){% endif %};"></span>
-                    </span>
-                </label>
-            </div>
-            
-            <div class="form-group" style="margin-bottom: 0;">
-                <textarea class="edit-emails" data-id="{{ empresa.id }}" rows="3" style="width: 100%; resize: vertical; font-size: 0.85rem; padding: 0.8rem; border-radius: 6px; background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); color: var(--text-primary);">{{ empresa.correos }}</textarea>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-                    <span class="status-msg-{{ empresa.id }}" style="font-size: 0.8rem; color: var(--success); opacity: 0; transition: opacity 0.3s;">Guardado ✓</span>
-                    <button class="btn btn-save" data-id="{{ empresa.id }}" style="padding: 0.3rem 0.8rem; font-size: 0.8rem; background: var(--primary-color);">Guardar Correos</button>
-                </div>
-            </div>
+    <!-- Filters -->
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+        <div class="form-group" style="flex: 1;">
+            <input type="text" id="search-input" placeholder="Buscar por correo..." style="width: 100%; padding: 0.8rem; background: rgba(0,0,0,0.2); color: white; border: 1px solid var(--glass-border); border-radius: 6px;">
         </div>
-        {% endfor %}
+        <div class="form-group" style="flex: 1;">
+            <select id="filter-empresa" style="width: 100%; padding: 0.8rem; background: rgba(0,0,0,0.2); color: white; border: 1px solid var(--glass-border); border-radius: 6px;">
+                <option value="">Todas las Empresas</option>
+                {% for emp in empresas %}
+                <option value="{{ emp.nombre }}">{{ emp.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div style="overflow-x: auto; border-radius: 8px; border: 1px solid var(--glass-border);">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead style="background: rgba(0,0,0,0.3);">
+                <tr>
+                    <th style="padding: 1rem; border-bottom: 1px solid var(--glass-border);">Correo Electrónico</th>
+                    <th style="padding: 1rem; border-bottom: 1px solid var(--glass-border);">Empresa</th>
+                    <th style="padding: 1rem; border-bottom: 1px solid var(--glass-border); text-align: center;">Activo</th>
+                    <th style="padding: 1rem; border-bottom: 1px solid var(--glass-border); text-align: right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="destinatarios-table-body">
+                {% for dest in destinatarios %}
+                <tr class="destinatario-row" data-empresa="{{ dest.empresa.nombre }}" style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+                    <td style="padding: 1rem; color: {% if not dest.activo %}var(--text-secondary){% else %}white{% endif %};" class="row-correo">
+                        {{ dest.correo }}
+                    </td>
+                    <td style="padding: 1rem; color: var(--text-secondary);">
+                        {{ dest.empresa.nombre }}
+                    </td>
+                    <td style="padding: 1rem; text-align: center;">
+                        <label class="switch" style="position: relative; display: inline-block; width: 40px; height: 20px;">
+                            <input type="checkbox" class="toggle-dest" data-id="{{ dest.id }}" {% if dest.activo %}checked{% endif %} style="opacity: 0; width: 0; height: 0;">
+                            <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: {% if dest.activo %}var(--success){% else %}#555{% endif %}; transition: .4s; border-radius: 20px;">
+                                <span style="position: absolute; content: ''; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; transform: {% if dest.activo %}translateX(20px){% else %}translateX(0){% endif %};"></span>
+                            </span>
+                        </label>
+                    </td>
+                    <td style="padding: 1rem; text-align: right;">
+                        <button class="btn btn-delete" data-id="{{ dest.id }}" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; background: rgba(220, 53, 69, 0.2); color: #ff6b6b; border: 1px solid rgba(220,53,69,0.3);">Eliminar</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-secondary);">No hay destinatarios registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // CSRF Token helper
     const csrftoken = '{{ csrf_token }}';
-    
-    // Custom Switch UI Animation (since native checkbox is hidden)
-    document.querySelectorAll('.toggle-empresa').forEach(checkbox => {
+
+    // Filters logic
+    const searchInput = document.getElementById('search-input');
+    const filterEmpresa = document.getElementById('filter-empresa');
+    const rows = document.querySelectorAll('.destinatario-row');
+
+    function filterTable() {
+        const query = searchInput.value.toLowerCase();
+        const empFilter = filterEmpresa.value;
+
+        rows.forEach(row => {
+            const correo = row.querySelector('.row-correo').textContent.toLowerCase();
+            const empresa = row.dataset.empresa;
+            
+            const matchesSearch = correo.includes(query);
+            const matchesEmp = empFilter === "" || empresa === empFilter;
+
+            if(matchesSearch && matchesEmp) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    searchInput.addEventListener('input', filterTable);
+    filterEmpresa.addEventListener('change', filterTable);
+
+    // Toggle active state
+    document.querySelectorAll('.toggle-dest').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             const slider = this.nextElementSibling;
             const knob = slider.querySelector('span');
-            const header = this.closest('.card').querySelector('h3');
+            const row = this.closest('tr');
+            const correoCell = row.querySelector('.row-correo');
             
             if (this.checked) {
                 slider.style.backgroundColor = 'var(--success)';
-                knob.style.transform = 'translateX(26px)';
-                header.style.color = 'var(--text-primary)';
+                knob.style.transform = 'translateX(20px)';
+                correoCell.style.color = 'white';
             } else {
-                slider.style.backgroundColor = '#ccc';
+                slider.style.backgroundColor = '#555';
                 knob.style.transform = 'translateX(0)';
-                header.style.color = 'var(--text-secondary)';
+                correoCell.style.color = 'var(--text-secondary)';
             }
             
-            // Send request to toggle
             fetch("{% url 'gestionar_correos' %}", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
-                body: JSON.stringify({ action: 'toggle', id: this.dataset.id, activa: this.checked })
+                body: JSON.stringify({ action: 'toggle_destinatario', id: this.dataset.id, activo: this.checked })
             });
         });
     });
 
-    // Save Emails Button
-    document.querySelectorAll('.btn-save').forEach(btn => {
+    // Delete
+    document.querySelectorAll('.btn-delete').forEach(btn => {
         btn.addEventListener('click', function() {
-            const id = this.dataset.id;
-            const textarea = document.querySelector(`.edit-emails[data-id="${id}"]`);
-            const msgSpan = document.querySelector(`.status-msg-${id}`);
-            
-            this.textContent = 'Guardando...';
-            
-            fetch("{% url 'gestionar_correos' %}", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
-                body: JSON.stringify({ action: 'update_emails', id: id, correos: textarea.value })
-            })
-            .then(r => r.json())
-            .then(data => {
-                this.textContent = 'Guardar Correos';
-                if(data.status === 'ok') {
-                    msgSpan.style.opacity = '1';
-                    setTimeout(() => msgSpan.style.opacity = '0', 2000);
-                }
-            });
+            if(confirm("¿Estás seguro de que deseas eliminar este correo permanentemente?")) {
+                const id = this.dataset.id;
+                fetch("{% url 'gestionar_correos' %}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                    body: JSON.stringify({ action: 'delete_destinatario', id: id })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if(data.status === 'ok') {
+                        this.closest('tr').remove();
+                    }
+                });
+            }
         });
     });
 
     // Add Form
     document.getElementById('add-form').addEventListener('submit', function(e) {
         e.preventDefault();
-        const name = document.getElementById('new-name').value;
-        const emails = document.getElementById('new-emails').value;
+        const empresa = document.getElementById('new-empresa').value;
+        const correo = document.getElementById('new-correo').value;
         
         fetch("{% url 'gestionar_correos' %}", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
-            body: JSON.stringify({ action: 'create', nombre: name, correos: emails })
+            body: JSON.stringify({ action: 'create', empresa: empresa, correo: correo })
         })
         .then(r => r.json())
         .then(data => {
             if(data.status === 'ok') {
                 window.location.reload();
+            } else {
+                alert("Error al agregar destinatario: " + (data.error || ""));
             }
         });
     });

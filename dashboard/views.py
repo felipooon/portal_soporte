@@ -5,7 +5,7 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.http import JsonResponse
 from django.conf import settings
-from .models import PersonalSoporte, Empresa, Bitacora
+from .models import PersonalSoporte, Empresa, Bitacora, Destinatario
 import datetime
 import json
 import requests
@@ -176,10 +176,9 @@ def correos_masivos(request):
             else:
                 correo_remitente = f"{nombre_parts[0]}@innovex.cl"
             
-            # Parse all emails from the comma-separated or semicolon-separated list
-            import re
-            raw_emails = empresa.correos.replace(';', ',')
-            destinatarios = [e.strip() for e in raw_emails.split(',') if e.strip()]
+            # Fetch individual emails for this company
+            dest_objs = empresa.destinatarios.filter(activo=True)
+            destinatarios = [d.correo.strip() for d in dest_objs if d.correo.strip()]
             if not destinatarios:
                 continue
 
@@ -213,33 +212,33 @@ def gestionar_correos(request):
             data = json.loads(request.body)
             action = data.get('action')
             
-            if action == 'toggle':
-                emp_id = data.get('id')
-                activa = data.get('activa')
-                empresa = Empresa.objects.get(id=emp_id)
-                empresa.activa = activa
-                empresa.save()
-                return JsonResponse({'status': 'ok'})
-                
-            elif action == 'update_emails':
-                emp_id = data.get('id')
-                correos = data.get('correos')
-                empresa = Empresa.objects.get(id=emp_id)
-                empresa.correos = correos
-                empresa.save()
+            if action == 'toggle_destinatario':
+                dest_id = data.get('id')
+                activo = data.get('activo')
+                dest = Destinatario.objects.get(id=dest_id)
+                dest.activo = activo
+                dest.save()
                 return JsonResponse({'status': 'ok'})
                 
             elif action == 'create':
-                nombre = data.get('nombre')
-                correos = data.get('correos')
-                Empresa.objects.create(nombre=nombre, correos=correos, activa=True)
+                empresa_nombre = data.get('empresa').strip()
+                correo = data.get('correo').strip()
+                
+                empresa, _ = Empresa.objects.get_or_create(nombre=empresa_nombre)
+                Destinatario.objects.create(correo=correo, empresa=empresa, activo=True)
+                return JsonResponse({'status': 'ok'})
+                
+            elif action == 'delete_destinatario':
+                dest_id = data.get('id')
+                Destinatario.objects.filter(id=dest_id).delete()
                 return JsonResponse({'status': 'ok'})
                 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
 
+    destinatarios = Destinatario.objects.select_related('empresa').all().order_by('empresa__nombre', 'correo')
     empresas = Empresa.objects.all().order_by('nombre')
-    return render(request, 'dashboard/gestionar_correos.html', {'empresas': empresas})
+    return render(request, 'dashboard/gestionar_correos.html', {'destinatarios': destinatarios, 'empresas': empresas})
 
 def certificados(request):
     return render(request, 'dashboard/certificados.html')
