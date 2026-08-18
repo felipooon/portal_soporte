@@ -201,4 +201,36 @@ def certificados(request):
 def calendario(request):
     return render(request, 'dashboard/calendario.html')
 
+import os
+import subprocess
 
+def get_dbus_env():
+    uid = os.getuid()
+    env = os.environ.copy()
+    if 'DBUS_SESSION_BUS_ADDRESS' not in env:
+        env['DBUS_SESSION_BUS_ADDRESS'] = f'unix:path=/run/user/{uid}/bus'
+    return env
+
+def music_control(request):
+    action = request.GET.get('action')
+    commands = {
+        'volup': ['pactl', 'set-sink-volume', '@DEFAULT_SINK@', '+5%'],
+        'voldn': ['pactl', 'set-sink-volume', '@DEFAULT_SINK@', '-5%'],
+        'mute': ['pactl', 'set-sink-mute', '@DEFAULT_SINK@', 'toggle'],
+        'play': ['playerctl', 'play-pause'],
+        'next': ['playerctl', 'next'],
+        'prev': ['playerctl', 'previous']
+    }
+    
+    if action in commands:
+        try:
+            env = get_dbus_env()
+            subprocess.run(commands[action], env=env, check=True)
+            return JsonResponse({'status': 'ok'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+            
+    return JsonResponse({'status': 'error', 'message': 'Invalid action'}, status=400)
+
+def music(request):
+    return render(request, 'dashboard/music.html')

@@ -9,4 +9,6 @@ urlpatterns = [
     path('api/bitacora/actualizar/', views.actualizar_bitacora, name='actualizar_bitacora'),
     path('api/wiki/buscar/', views.buscar_wiki, name='buscar_wiki'),
     path('trac/', views.trac_wiki, name='trac_wiki'),
+    path('music/', views.music, name='music'),
+    path('api/music/control/', views.music_control, name='music_control'),
 ]
