@@ -268,6 +268,11 @@ def get_dbus_env():
         env['DBUS_SESSION_BUS_ADDRESS'] = f'unix:path=/run/user/{uid}/bus'
     if 'DISPLAY' not in env:
         env['DISPLAY'] = ':0'
+    if 'XDG_RUNTIME_DIR' not in env:
+        env['XDG_RUNTIME_DIR'] = f'/run/user/{uid}'
+    # Ensure /usr/local/bin is in PATH for yt-dlp
+    if '/usr/local/bin' not in env.get('PATH', ''):
+        env['PATH'] = f"/usr/local/bin:{env.get('PATH', '')}"
     return env
 
 def music_control(request):
@@ -290,8 +295,16 @@ def music_control(request):
             subprocess.run(['pkill', '-f', 'mpv --no-video'], env=env)
             
             # Start mpv purely in the background via yt-dlp
-            command = ['mpv', '--no-video', f'ytdl://ytsearch1:{query}']
-            subprocess.Popen(command, env=env, start_new_session=True)
+            command = [
+                'mpv', 
+                '--no-video', 
+                '--script-opts=ytdl_hook-ytdl_path=/usr/local/bin/yt-dlp',
+                f'ytdl://ytsearch1:{query}'
+            ]
+            
+            # Guardamos un log para ver si mpv falla por permisos
+            with open('mpv_debug.log', 'w') as log_file:
+                subprocess.Popen(command, env=env, start_new_session=True, stdout=log_file, stderr=subprocess.STDOUT)
             
             return JsonResponse({'status': 'ok'})
         except Exception as e:
