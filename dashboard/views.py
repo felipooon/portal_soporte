@@ -246,3 +246,29 @@ def music_control(request):
 
 def music(request):
     return render(request, 'dashboard/music.html')
+
+def music_status(request):
+    env = get_dbus_env()
+    
+    status_data = {
+        'status': 'stopped',
+        'title': 'No hay música reproduciéndose',
+        'artist': ''
+    }
+    
+    try:
+        result = subprocess.run(['playerctl', 'status'], env=env, capture_output=True, text=True)
+        if result.returncode == 0:
+            status_data['status'] = result.stdout.strip().lower()
+            
+            title_res = subprocess.run(['playerctl', 'metadata', 'title'], env=env, capture_output=True, text=True)
+            if title_res.returncode == 0 and title_res.stdout.strip():
+                status_data['title'] = title_res.stdout.strip()
+                
+            artist_res = subprocess.run(['playerctl', 'metadata', 'artist'], env=env, capture_output=True, text=True)
+            if artist_res.returncode == 0 and artist_res.stdout.strip():
+                status_data['artist'] = artist_res.stdout.strip()
+    except Exception:
+        pass
+        
+    return JsonResponse(status_data)

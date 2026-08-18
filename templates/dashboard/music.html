@@ -149,6 +149,16 @@
     <div class="player-card">
         <div class="player-title">🎵 Reproductor de Chrome</div>
         
+        <!-- Metadata -->
+        <div class="metadata" style="margin-bottom: 25px;">
+            <div id="track-title" style="color: white; font-size: 1.2rem; font-weight: 600; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
+                Cargando...
+            </div>
+            <div id="track-artist" style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
+                
+            </div>
+        </div>
+
         <div class="controls">
             <button class="btn-control" onclick="sendCommand('prev')" title="Anterior">
                 <i data-feather="skip-back"></i>
@@ -248,5 +258,31 @@
                 });
         }
     }
+
+    function updateStatus() {
+        fetch(`/api/music/status/`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('track-title').textContent = data.title || 'Desconocido';
+                document.getElementById('track-artist').textContent = data.artist || '';
+                
+                const playBtn = document.querySelector('.btn-play');
+                if (data.status === 'playing') {
+                    playState = true;
+                    playBtn.innerHTML = '<i data-feather="pause"></i>';
+                } else if (data.status === 'paused' || data.status === 'stopped') {
+                    playState = false;
+                    playBtn.innerHTML = '<i data-feather="play"></i>';
+                }
+                feather.replace();
+            })
+            .catch(err => console.error('Error fetching status:', err));
+    }
+
+    // Actualizar el estado cada 2 segundos
+    setInterval(updateStatus, 2000);
+    // Ejecutar inmediatamente al cargar
+    updateStatus();
+
 </script>
 {% endblock %}
