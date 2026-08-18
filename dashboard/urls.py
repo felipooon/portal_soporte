@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     path('', views.index, name='index'),
     path('correos-masivos/', views.correos_masivos, name='correos_masivos'),
+    path('correos-masivos/gestionar/', views.gestionar_correos, name='gestionar_correos'),
     path('certificados/', views.certificados, name='certificados'),
     path('calendario/', views.calendario, name='calendario'),
     path('api/bitacora/actualizar/', views.actualizar_bitacora, name='actualizar_bitacora'),

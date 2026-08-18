@@ -4,8 +4,13 @@
 
 {% block content %}
 <div class="page-container glass-effect" style="padding: 2rem; border-radius: 1rem; margin-top: 2rem;">
-    <h1>Correos Masivos Fin de Semana</h1>
-    <p class="subtitle">Programa o envía correos a clientes para notificaciones de fin de semana.</p>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1>Correos Masivos Fin de Semana</h1>
+            <p class="subtitle">Programa o envía correos a clientes para notificaciones de fin de semana.</p>
+        </div>
+        <a href="{% url 'gestionar_correos' %}" class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);">Administrar Base de Datos</a>
+    </div>
     
     {% if messages %}
         <div class="messages" style="margin-bottom: 1.5rem; color: #10b981;">

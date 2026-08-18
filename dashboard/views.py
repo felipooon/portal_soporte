@@ -207,6 +207,40 @@ def correos_masivos(request):
         'current_week': current_week
     })
 
+def gestionar_correos(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            action = data.get('action')
+            
+            if action == 'toggle':
+                emp_id = data.get('id')
+                activa = data.get('activa')
+                empresa = Empresa.objects.get(id=emp_id)
+                empresa.activa = activa
+                empresa.save()
+                return JsonResponse({'status': 'ok'})
+                
+            elif action == 'update_emails':
+                emp_id = data.get('id')
+                correos = data.get('correos')
+                empresa = Empresa.objects.get(id=emp_id)
+                empresa.correos = correos
+                empresa.save()
+                return JsonResponse({'status': 'ok'})
+                
+            elif action == 'create':
+                nombre = data.get('nombre')
+                correos = data.get('correos')
+                Empresa.objects.create(nombre=nombre, correos=correos, activa=True)
+                return JsonResponse({'status': 'ok'})
+                
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+    empresas = Empresa.objects.all().order_by('nombre')
+    return render(request, 'dashboard/gestionar_correos.html', {'empresas': empresas})
+
 def certificados(request):
     return render(request, 'dashboard/certificados.html')
 
