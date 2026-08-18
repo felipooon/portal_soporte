@@ -291,20 +291,22 @@ def music_control(request):
 
     if action == 'search' and query:
         try:
+            import shlex
+            
             # Stop any existing background music first
             subprocess.run(['pkill', '-f', 'mpv --no-video'], env=env)
+            subprocess.run(['pkill', '-f', 'yt-dlp -o -'], env=env)
             
-            # Start mpv purely in the background via yt-dlp
-            command = [
-                'mpv', 
-                '--no-video', 
-                '--script-opts=ytdl_hook-ytdl_path=/usr/local/bin/yt-dlp',
-                f'ytdl://ytsearch1:{query}'
-            ]
+            # Bypass the mpv 403 error by using yt-dlp to download and pipe directly to mpv.
+            # We use force-media-title so the Dashboard UI (playerctl) shows what is playing.
+            safe_query = shlex.quote(f"ytsearch1:{query}")
+            safe_title = shlex.quote(query.title())
             
-            # Guardamos un log para ver si mpv falla por permisos
+            command = f"/usr/local/bin/yt-dlp -q -o - -f bestaudio {safe_query} | mpv --no-video --force-media-title={safe_title} -"
+            
+            # Guardamos un log para ver si falla por permisos
             with open('mpv_debug.log', 'w') as log_file:
-                subprocess.Popen(command, env=env, start_new_session=True, stdout=log_file, stderr=subprocess.STDOUT)
+                subprocess.Popen(command, env=env, shell=True, start_new_session=True, stdout=log_file, stderr=subprocess.STDOUT)
             
             return JsonResponse({'status': 'ok'})
         except Exception as e:
