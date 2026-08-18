@@ -295,14 +295,14 @@ def music_control(request):
             
             # Stop any existing background music first
             subprocess.run(['pkill', '-f', 'mpv --no-video'], env=env)
-            subprocess.run(['pkill', '-f', 'yt-dlp -o -'], env=env)
+            subprocess.run(['pkill', '-f', 'yt-dlp'], env=env)
             
             # Bypass the mpv 403 error by using yt-dlp to download and pipe directly to mpv.
             # We use force-media-title so the Dashboard UI (playerctl) shows what is playing.
             safe_query = shlex.quote(f"ytsearch1:{query}")
             safe_title = shlex.quote(query.title())
             
-            command = f"/usr/local/bin/yt-dlp -q -o - -f bestaudio {safe_query} | mpv --no-video --force-media-title={safe_title} -"
+            command = f"/usr/local/bin/yt-dlp --js-runtimes nodejs -q -o - -f bestaudio {safe_query} | mpv --no-video --force-media-title={safe_title} -"
             
             # Guardamos un log para ver si falla por permisos
             with open('mpv_debug.log', 'w') as log_file:
