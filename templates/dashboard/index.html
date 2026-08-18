@@ -13,7 +13,7 @@
     <p style="margin-top: 0; color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.9rem;">
         📝 Handover rápido para el equipo. <span id="bitacora-status" style="float: right; color: var(--success); font-size: 0.8rem;">Última act: {{ bitacora.actualizado_en|date:"d/m/Y H:i" }}</span>
     </p>
-    <textarea id="bitacora-texto" class="glass-effect" style="width: 100%; height: 120px; resize: vertical; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: var(--text-primary); padding: 1rem; border-radius: 8px; font-family: monospace;">{{ bitacora.texto }}</textarea>
+    <textarea id="bitacora-texto" class="glass-effect" style="width: 100%; height: 300px; resize: vertical; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: var(--text-primary); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 1.1rem; line-height: 1.5;">{{ bitacora.texto }}</textarea>
 </div>
 
 <script>
@@ -44,6 +44,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }, 1000);
         });
+
+        // Actualización periódica (Polling)
+        setInterval(() => {
+            // Solo actualizamos si el usuario no tiene el cursor puesto en la pizarra (para no interrumpir su escritura)
+            if (document.activeElement !== textarea) {
+                fetch("{% url 'actualizar_bitacora' %}")
+                .then(r => r.json())
+                .then(d => {
+                    if (d.status === 'ok') {
+                        // Si el texto que viene del servidor es diferente al actual, lo actualizamos
+                        if (textarea.value !== d.texto) {
+                            textarea.value = d.texto;
+                            statusSpan.textContent = 'Actualizado ' + d.actualizado_en;
+                            statusSpan.style.color = 'var(--success)';
+                        }
+                    }
+                })
+                .catch(err => console.error("Error al actualizar pizarra:", err));
+            }
+        }, 5000); // Revisa cada 5 segundos
     }
 });
 </script>

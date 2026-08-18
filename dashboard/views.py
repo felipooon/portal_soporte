@@ -27,6 +27,9 @@ def actualizar_bitacora(request):
             return JsonResponse({'status': 'ok', 'actualizado_en': bitacora.actualizado_en.strftime('%d/%m/%Y %H:%M')})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
+    elif request.method == 'GET':
+        bitacora, _ = Bitacora.objects.get_or_create(id=1)
+        return JsonResponse({'status': 'ok', 'texto': bitacora.texto, 'actualizado_en': bitacora.actualizado_en.strftime('%d/%m/%Y %H:%M')})
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 def buscar_wiki(request):
