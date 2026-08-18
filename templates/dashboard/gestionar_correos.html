@@ -4,12 +4,15 @@
 
 {% block content %}
 <div class="page-container glass-effect" style="padding: 2rem; border-radius: 1rem; margin-top: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <div>
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 2rem;">
+        <div style="flex: 1;">
             <h1>Gestionar Correos de Empresas</h1>
             <p class="subtitle">Lista completa de destinatarios. Puedes filtrarlos, prenderlos/apagarlos o agregar nuevos.</p>
         </div>
-        <a href="{% url 'correos_masivos' %}" class="btn" style="background: rgba(255,255,255,0.1);">Volver al Envío</a>
+        <a href="{% url 'correos_masivos' %}" class="btn" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.1); color: white; text-decoration: none; border: 1px solid var(--glass-border); white-space: nowrap; font-weight: 500;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+            Volver al Envío
+        </a>
     </div>
     
     <!-- Add new recipient form -->
