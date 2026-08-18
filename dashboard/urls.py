@@ -12,4 +12,5 @@ urlpatterns = [
     path('music/', views.music, name='music'),
     path('api/music/control/', views.music_control, name='music_control'),
     path('api/music/status/', views.music_status, name='music_status'),
+    path('poseidon/', views.poseidon, name='poseidon'),
 ]

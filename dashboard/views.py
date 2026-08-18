@@ -272,3 +272,6 @@ def music_status(request):
         pass
         
     return JsonResponse(status_data)
+
+def poseidon(request):
+    return render(request, 'dashboard/poseidon.html')
