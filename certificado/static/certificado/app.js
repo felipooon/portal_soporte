@@ -2702,7 +2702,7 @@ function mostrarTextoPlanoEnPanelDerecho() {
     <div style="background: #ffffff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-height: 800px; font-family: sans-serif;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid #002d4b; padding-bottom: 8px;">
         <h3 style="margin: 0; color: #002d4b; font-size: 16px; text-transform: uppercase;">Vista Texto Plano</h3>
-        <button class="btn btn-small btn-secondary" onclick="navigator.clipboard.writeText(document.getElementById('preTextoPlanoDerecho').innerText); mostrarToast('Texto plano copiado', 'success');">Copiar Texto</button>
+        <button class="btn btn-small btn-secondary" onclick="window.copiarTextoGlobal('preTextoPlanoDerecho')">Copiar Texto</button>
       </div>
       <pre id="preTextoPlanoDerecho" style="background: #1e293b; color: #f8fafc; padding: 16px; border-radius: 6px; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.5; overflow-x: auto; white-space: pre-wrap; word-break: break-word;">${htmlEscapeAttr(textoPlano || "Sin texto disponible.")}</pre>
     </div>
@@ -2712,6 +2712,44 @@ function mostrarTextoPlanoEnPanelDerecho() {
 function htmlEscapeAttr(str) {
   if (!str) return "";
   return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+window.copiarTextoGlobal = function(id) {
+  const element = document.getElementById(id);
+  if (!element) return;
+  const text = element.innerText || element.value;
+  
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => {
+      mostrarToast('Texto copiado', 'success');
+    }).catch(err => {
+      console.error(err);
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
+};
+
+function fallbackCopy(text) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.position = "fixed";
+  textArea.style.left = "-9999px";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    const successful = document.execCommand('copy');
+    if (successful) {
+      mostrarToast('Texto copiado (modo compatibilidad)', 'success');
+    } else {
+      mostrarToast('No se pudo copiar automáticamente', 'error');
+    }
+  } catch (err) {
+    mostrarToast('Error al copiar el texto', 'error');
+  }
+  document.body.removeChild(textArea);
 }
 
 // MÓDULO INFORMACIÓN PARA INGRESO DE TÉCNICO
