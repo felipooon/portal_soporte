@@ -6,6 +6,17 @@ class PersonalSoporte(models.Model):
     telefono = models.CharField(max_length=20)
     correo = models.EmailField()
 
+    @property
+    def cargo_calculado(self):
+        n = self.nombre.lower()
+        if 'hector' in n or 'héctor' in n or 'leonidas' in n:
+            return 'Asistente de Soporte Senior'
+        elif any(k in n for k in ['leonardo', 'gabriel', 'felipe', 'edwin']):
+            return 'Asistente de Soporte Intermedio'
+        elif 'ivan' in n or 'iván' in n:
+            return 'Asistente de Soporte'
+        return self.cargo or 'Asistente de Soporte'
+
     def __str__(self):
         return self.nombre
 

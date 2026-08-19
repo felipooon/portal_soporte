@@ -32,6 +32,12 @@ def pizarra_embed(request):
         'bitacora': bitacora
     })
 
+def dashboard_general_embed(request):
+    bitacora, created = Bitacora.objects.get_or_create(id=1)
+    return render(request, 'dashboard/dashboard_general_embed.html', {
+        'bitacora': bitacora
+    })
+
 def planillas_embed(request):
     return render(request, 'dashboard/planillas_embed.html')
 
@@ -181,8 +187,10 @@ def correos_masivos(request):
                     self.destinatarios = DummyManager(correos_str)
                     
             empresas_activas = [DummyEmpresa(correo_prueba)]
+            cc_list = []
         else:
             empresas_activas = Empresa.objects.filter(activa=True)
+            cc_list = ['soporte@innovex.cl', 'jefe.area@innovex.cl']
             
         subject = f"ASISTENCIA SOPORTE INNOVEX FIN DE SEMANA - SEMANA {semana}"
         
@@ -192,6 +200,7 @@ def correos_masivos(request):
                 'fecha_sabado': fecha_sabado,
                 'fecha_domingo': fecha_domingo,
                 'personal': personal,
+                'cargo_calculado': personal.cargo_calculado,
             })
             text_content = strip_tags(html_content)
             
@@ -218,7 +227,7 @@ def correos_masivos(request):
                 body=text_content,
                 from_email=correo_remitente,
                 to=destinatarios,
-                cc=['soporte@innovex.cl', 'jefe.area@innovex.cl'],
+                cc=cc_list,
                 reply_to=[correo_remitente],
             )
             msg.attach_alternative(html_content, "text/html")

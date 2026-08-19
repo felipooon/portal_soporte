@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     path('', views.index, name='index'),
     path('antiguo', views.index_antiguo, name='index_antiguo'),
+    path('dashboard-general', views.dashboard_general_embed, name='dashboard_general_embed'),
     path('pizarra-embed', views.pizarra_embed, name='pizarra_embed'),
     path('planillas-drive', views.planillas_embed, name='planillas_embed'),
     path('correos-masivos/', views.correos_masivos, name='correos_masivos'),

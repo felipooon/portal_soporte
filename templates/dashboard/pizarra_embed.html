@@ -1,29 +1,145 @@
 {% extends 'base.html' %}
-{% block title %}Pizarra - Innovex Soporte{% endblock %}
+
+{% block title %}Pizarra de Turno - Innovex Soporte{% endblock %}
+
 {% block content %}
-<div style="padding: 2rem;">
-<h2 class="section-title">Bitácora / Pizarra de Turno</h2>
-<div class="card glass-effect" style="margin-bottom: 3rem; padding: 1.5rem; position: relative;">
-    <p style="margin-top: 0; color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.9rem;">
-        📝 Handover rápido para el equipo. <span id="bitacora-status" style="float: right; color: var(--success); font-size: 0.8rem;">Última act: {{ bitacora.actualizado_en|date:"d/m/Y H:i" }}</span>
-    </p>
-    <textarea id="bitacora-texto" class="glass-effect" style="width: 100%; height: 300px; resize: vertical; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: var(--text-primary); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 1.1rem; line-height: 1.5;">{{ bitacora.texto }}</textarea>
+<style>
+    .pizarra-container {
+        padding: 24px;
+        max-width: 1300px;
+        margin: 0;
+    }
+    .pizarra-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 28px 32px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .pizarra-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    .pizarra-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 0 0 6px 0;
+        letter-spacing: -0.5px;
+    }
+    .pizarra-sub {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+    .pizarra-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .status-badge-sync {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #ecfdf5;
+        color: #059669;
+        border: 1px solid #a7f3d0;
+        padding: 5px 14px;
+        border-radius: 16px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    [data-theme="dark"] .status-badge-sync {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border-color: rgba(16, 185, 129, 0.3);
+    }
+    .btn-copy {
+        background: var(--bg-body);
+        color: var(--text-primary);
+        font-weight: 600;
+        padding: 6px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        font-size: 0.82rem;
+        transition: all 0.2s;
+    }
+    .btn-copy:hover {
+        border-color: var(--text-secondary);
+    }
+    .pizarra-textarea {
+        width: 100%;
+        height: 520px;
+        resize: vertical;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--bg-body);
+        color: var(--text-primary);
+        padding: 20px;
+        font-family: 'Inter', monospace;
+        font-size: 1rem;
+        line-height: 1.6;
+        transition: border-color 0.2s;
+    }
+    .pizarra-textarea:focus {
+        outline: none;
+        border-color: #f59e0b;
+    }
+</style>
+
+<div class="pizarra-container">
+    <div class="pizarra-card">
+        <div class="pizarra-header">
+            <div>
+                <h1 class="pizarra-title">Pizarra de Turno — Handover Continuo</h1>
+                <p class="pizarra-sub">Espacio para registrar pendientes, novedades críticas, equipos en revisión y handover entre turnos de soporte.</p>
+            </div>
+            <div class="pizarra-actions">
+                <span class="status-badge-sync" id="bitacora-status">● Sincronizado ({{ bitacora.actualizado_en|date:"d/m/Y H:i" }})</span>
+                <button class="btn-copy" id="btn-copiar-bitacora" onclick="copiarBitacora()">Copiar Bitácora</button>
+            </div>
+        </div>
+
+        <textarea id="bitacora-texto" class="pizarra-textarea" placeholder="Escribe aquí los datos del turno...">{{ bitacora.texto }}</textarea>
+    </div>
 </div>
 
 <script>
+function copiarBitacora() {
+    const textarea = document.getElementById('bitacora-texto');
+    const btn = document.getElementById('btn-copiar-bitacora');
+    if (textarea && textarea.value) {
+        navigator.clipboard.writeText(textarea.value).then(() => {
+            const originalText = btn.textContent;
+            btn.textContent = '¡Copiado!';
+            btn.style.color = '#059669';
+            btn.style.borderColor = '#10b981';
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.color = '';
+                btn.style.borderColor = '';
+            }, 2000);
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const textarea = document.getElementById('bitacora-texto');
-    const statusSpan = document.getElementById('bitacora-status');
+    const statusBadge = document.getElementById('bitacora-status');
     let bitacoraTimeout;
 
-    if(textarea) {
+    if (textarea) {
         textarea.addEventListener('input', function() {
-            statusSpan.textContent = 'Escribiendo...';
-            statusSpan.style.color = 'var(--warning)';
+            statusBadge.textContent = '⏳ Escribiendo...';
             
             clearTimeout(bitacoraTimeout);
             bitacoraTimeout = setTimeout(() => {
-                statusSpan.textContent = 'Guardando...';
+                statusBadge.textContent = '💾 Guardando...';
                 fetch("{% url 'actualizar_bitacora' %}", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
@@ -31,37 +147,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .then(r => r.json())
                 .then(d => {
-                    if(d.status === 'ok') {
-                        statusSpan.textContent = 'Guardado ' + d.actualizado_en;
-                        statusSpan.style.color = 'var(--success)';
+                    if (d.status === 'ok') {
+                        statusBadge.textContent = '● Sincronizado (' + d.actualizado_en + ')';
                     }
                 });
-            }, 1000);
+            }, 800);
         });
 
-        // Actualización periódica (Polling)
+        // Polling auto-sync
         setInterval(() => {
-            // Solo actualizamos si el usuario no tiene el cursor puesto en la pizarra (para no interrumpir su escritura)
             if (document.activeElement !== textarea) {
                 fetch("{% url 'actualizar_bitacora' %}")
                 .then(r => r.json())
                 .then(d => {
-                    if (d.status === 'ok') {
-                        // Si el texto que viene del servidor es diferente al actual, lo actualizamos
-                        if (textarea.value !== d.texto) {
-                            textarea.value = d.texto;
-                            statusSpan.textContent = 'Actualizado ' + d.actualizado_en;
-                            statusSpan.style.color = 'var(--success)';
-                        }
+                    if (d.status === 'ok' && textarea.value !== d.texto) {
+                        textarea.value = d.texto;
+                        statusBadge.textContent = '● Sincronizado (' + d.actualizado_en + ')';
                     }
                 })
-                .catch(err => console.error("Error al actualizar pizarra:", err));
+                .catch(err => console.error("Error bitácora sync:", err));
             }
-        }, 5000); // Revisa cada 5 segundos
+        }, 4000);
     }
 });
 </script>
-
-
-</div>
 {% endblock %}

@@ -1,0 +1,436 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard General - Innovex Soporte{% endblock %}
+
+{% block content %}
+<style>
+    .dash-container {
+        padding: 20px;
+        max-width: 1300px;
+        margin: 0;
+    }
+    
+    /* Hero Card */
+    .hero-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-left: 4px solid #f59e0b;
+        border-radius: 12px;
+        padding: 28px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .hero-left {
+        max-width: 750px;
+    }
+    .hero-badge {
+        display: inline-block;
+        background: #fef3c7;
+        color: #d97706;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        padding: 3px 10px;
+        border-radius: 6px;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+    }
+    [data-theme="dark"] .hero-badge {
+        background: rgba(245, 158, 11, 0.2);
+        color: #fbbf24;
+    }
+    .hero-title {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 0 0 8px 0;
+        letter-spacing: -0.5px;
+    }
+    .hero-sub {
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin-bottom: 20px;
+    }
+    .hero-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .btn-hero-primary {
+        background: #f59e0b;
+        color: #1e293b;
+        font-weight: 700;
+        padding: 10px 18px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.88rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+    .btn-hero-primary:hover {
+        background: #d97706;
+        color: #ffffff;
+    }
+    .btn-hero-secondary {
+        background: var(--bg-body);
+        color: var(--text-primary);
+        font-weight: 600;
+        padding: 10px 18px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        font-size: 0.88rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+    .btn-hero-secondary:hover {
+        border-color: var(--text-secondary);
+    }
+    
+    .hero-stats {
+        display: flex;
+        gap: 16px;
+    }
+    .stat-box {
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 16px 24px;
+        text-align: center;
+        min-width: 130px;
+    }
+    .stat-number {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #f59e0b;
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+    .stat-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    /* Bitacora Quick Card */
+    .bitacora-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 24px 28px;
+        margin-bottom: 32px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .bitacora-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+    }
+    .bitacora-title-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .bitacora-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+    .bitacora-sub {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin: 4px 0 0 0;
+    }
+    .status-badge-sync {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #ecfdf5;
+        color: #059669;
+        border: 1px solid #a7f3d0;
+        padding: 4px 12px;
+        border-radius: 16px;
+        font-size: 0.78rem;
+        font-weight: 600;
+    }
+    [data-theme="dark"] .status-badge-sync {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border-color: rgba(16, 185, 129, 0.3);
+    }
+    .bitacora-input {
+        width: 100%;
+        height: 140px;
+        resize: vertical;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-body);
+        color: var(--text-primary);
+        padding: 14px 16px;
+        font-family: 'Inter', monospace;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        transition: border-color 0.2s;
+    }
+    .bitacora-input:focus {
+        outline: none;
+        border-color: #f59e0b;
+    }
+
+    /* Grid of Tools */
+    .section-heading {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0 0 18px 0;
+    }
+    .tools-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+    .tool-item-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        color: inherit;
+        position: relative;
+    }
+    .tool-item-card:hover {
+        border-color: #f59e0b;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    }
+    .tool-icon-wrapper {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: rgba(245, 158, 11, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+    .tool-info {
+        flex: 1;
+    }
+    .tool-name {
+        font-size: 0.98rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0 0 6px 0;
+    }
+    .tool-desc {
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+        margin: 0;
+    }
+    .tool-arrow {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        position: absolute;
+        right: 16px;
+        top: 20px;
+    }
+</style>
+
+<div class="dash-container">
+    <!-- Hero Banner Card -->
+    <div class="hero-card">
+        <div class="hero-left">
+            <span class="hero-badge">INNOVEX TECH SUPPORT SYSTEM</span>
+            <h1 class="hero-title">Portal unificado de Soporte</h1>
+            <p class="hero-sub">
+                Centro de control operativo para gestión integral de certificados técnicos, monitoreo abiótico, handover de turno, comunicaciones a clientes y utilidades técnicas.
+            </p>
+            <div class="hero-actions">
+                <button class="btn-hero-primary" onclick="navTo('/certificado/?embed=1&module=certificado', 'Certificado Instalación')">
+                    📄 Certificado de Instalación
+                </button>
+                <button class="btn-hero-secondary" onclick="navTo('/certificado/?embed=1&module=revisor', 'Revisor & Verificación')">
+                    🔍 Revisor & Verificación
+                </button>
+                <button class="btn-hero-secondary" onclick="navTo('{% url 'correos_masivos' %}?embed=1', 'Correos Fin de Semana')">
+                    ✉️ Correos Fin de Semana
+                </button>
+            </div>
+        </div>
+        <div class="hero-stats">
+            <div class="stat-box">
+                <div class="stat-number">3</div>
+                <div class="stat-label">Módulos de Soporte</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Handover de Turno</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Bitacora Card -->
+    <div class="bitacora-card">
+        <div class="bitacora-header">
+            <div>
+                <div class="bitacora-title-group">
+                    <span style="font-size:1.3rem;">📝</span>
+                    <h2 class="bitacora-title">Pizarra de Turno / Bitácora Rápida</h2>
+                </div>
+                <p class="bitacora-sub">Novedades y notas de handover entre asistentes de soporte (guardado automático).</p>
+            </div>
+            <div>
+                <span class="status-badge-sync" id="bitacora-status">● Sincronizado ({{ bitacora.actualizado_en|date:"d/m/Y H:i" }})</span>
+            </div>
+        </div>
+        <textarea id="bitacora-texto" class="bitacora-input" placeholder="Escribe aquí las novedades del turno...">{{ bitacora.texto }}</textarea>
+    </div>
+
+    <!-- Integrated Tools Grid -->
+    <h3 class="section-heading">Herramientas & Módulos Integrados</h3>
+    <div class="tools-grid">
+        <div class="tool-item-card" onclick="navTo('/certificado/?embed=1&module=certificado', 'Certificado Instalación')">
+            <div class="tool-icon-wrapper">📄</div>
+            <div class="tool-info">
+                <h4 class="tool-name">Certificado de Instalación</h4>
+                <p class="tool-desc">Generación de fichas completas, auto-rellenado SSH/Telnet y compilación oficial de PDF.</p>
+            </div>
+            <span class="tool-arrow">→</span>
+        </div>
+
+        <div class="tool-item-card" onclick="navTo('/certificado/?embed=1&module=revisor', 'Revisor & Verificación')">
+            <div class="tool-icon-wrapper">🔍</div>
+            <div class="tool-info">
+                <h4 class="tool-name">Revisor & Verificación</h4>
+                <p class="tool-desc">Inspección remota de equipos Jennic, voltajes individuales y tramas de sensores (OXY, COND, FLOW).</p>
+            </div>
+            <span class="tool-arrow">→</span>
+        </div>
+
+        <div class="tool-item-card" onclick="navTo('/certificado/?embed=1&module=ingreso_tecnico', 'Ingreso de Técnico')">
+            <div class="tool-icon-wrapper">📋</div>
+            <div class="tool-info">
+                <h4 class="tool-name">Ingreso de Técnico</h4>
+                <p class="tool-desc">Generación de formato estructurado para ingreso de personal de terreno y repuestos.</p>
+            </div>
+            <span class="tool-arrow">→</span>
+        </div>
+
+        <div class="tool-item-card" onclick="navTo('{% url 'correos_masivos' %}?embed=1', 'Correos Fin de Semana')">
+            <div class="tool-icon-wrapper">✉️</div>
+            <div class="tool-info">
+                <h4 class="tool-name">Correos Fin de Semana</h4>
+                <p class="tool-desc">Programación y emisión masiva de comunicaciones de turno con firma corporativa formal.</p>
+            </div>
+            <span class="tool-arrow">→</span>
+        </div>
+
+        <div class="tool-item-card" onclick="navTo('{% url 'gestionar_correos' %}?embed=1', 'Gestor de Destinatarios')">
+            <div class="tool-icon-wrapper">👥</div>
+            <div class="tool-info">
+                <h4 class="tool-name">Gestor de Destinatarios</h4>
+                <p class="tool-desc">Base de datos de contactos por empresa con switches de activación instantánea.</p>
+            </div>
+            <span class="tool-arrow">→</span>
+        </div>
+
+        <div class="tool-item-card" onclick="navTo('{% url 'poseidon' %}?embed=1', 'Poseidón (Dual Monitor)')">
+            <div class="tool-icon-wrapper">🔱</div>
+            <div class="tool-info">
+                <h4 class="tool-name">Poseidón (Monitor Dual)</h4>
+                <p class="tool-desc">Lanzador de monitores de inyección en paralelo y escaneo SSH de red interna.</p>
+            </div>
+            <span class="tool-arrow">→</span>
+        </div>
+
+        <div class="tool-item-card" onclick="navTo('{% url 'calendario' %}?embed=1', 'Calendario de Turnos')">
+            <div class="tool-icon-wrapper">📅</div>
+            <div class="tool-info">
+                <h4 class="tool-name">Calendario de Turnos</h4>
+                <p class="tool-desc">Planificación de turnos y actividades mensuales sincronizadas.</p>
+            </div>
+            <span class="tool-arrow">→</span>
+        </div>
+
+        <div class="tool-item-card" onclick="window.open('https://intranet.innovex.cl/operaciones/search', '_blank')">
+            <div class="tool-icon-wrapper">📚</div>
+            <div class="tool-info">
+                <h4 class="tool-name">Buscador Trac Wiki</h4>
+                <p class="tool-desc">Buscador de procedimientos técnicos, manuales de equipos y guías de solución.</p>
+            </div>
+            <span class="tool-arrow">↗</span>
+        </div>
+    </div>
+</div>
+
+<script>
+function navTo(url, title) {
+    if (window.parent && window.parent.navigateToTool) {
+        window.parent.navigateToTool(url, title);
+    } else {
+        window.location.href = url;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('bitacora-texto');
+    const statusBadge = document.getElementById('bitacora-status');
+    let bitacoraTimeout;
+
+    if (textarea) {
+        textarea.addEventListener('input', function() {
+            statusBadge.textContent = '⏳ Escribiendo...';
+            
+            clearTimeout(bitacoraTimeout);
+            bitacoraTimeout = setTimeout(() => {
+                statusBadge.textContent = '💾 Guardando...';
+                fetch("{% url 'actualizar_bitacora' %}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: JSON.stringify({texto: textarea.value})
+                })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.status === 'ok') {
+                        statusBadge.textContent = '● Sincronizado (' + d.actualizado_en + ')';
+                    }
+                });
+            }, 800);
+        });
+
+        // Auto-refresh via polling
+        setInterval(() => {
+            if (document.activeElement !== textarea) {
+                fetch("{% url 'actualizar_bitacora' %}")
+                .then(r => r.json())
+                .then(d => {
+                    if (d.status === 'ok' && textarea.value !== d.texto) {
+                        textarea.value = d.texto;
+                        statusBadge.textContent = '● Sincronizado (' + d.actualizado_en + ')';
+                    }
+                })
+                .catch(err => console.error("Error bitácora sync:", err));
+            }
+        }, 4000);
+    }
+});
+</script>
+{% endblock %}

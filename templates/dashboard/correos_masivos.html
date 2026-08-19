@@ -3,13 +3,101 @@
 {% block title %}Correos Masivos - Innovex Soporte{% endblock %}
 
 {% block content %}
-<div class="page-container glass-effect" style="padding: 2rem; border-radius: 1rem; margin-top: 2rem;">
+<style>
+    .live-preview-card {
+        background: #ffffff;
+        color: #1e293b;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 32px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+        margin-top: 1rem;
+    }
+    .mail-header {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #0f172a;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f59e0b;
+        margin-bottom: 24px;
+        letter-spacing: -0.3px;
+    }
+    .mail-p {
+        font-size: 0.92rem;
+        line-height: 1.6;
+        color: #334155;
+        margin-bottom: 16px;
+    }
+    .mail-box-personal {
+        background: #f1f5f9;
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin: 20px 0;
+        font-size: 0.92rem;
+        color: #1e293b;
+    }
+    .mail-box-personal div {
+        margin-bottom: 6px;
+    }
+    .mail-box-personal div:last-child {
+        margin-bottom: 0;
+    }
+    .mail-box-alert {
+        background: #fffbeb;
+        border: 1px solid #fef3c7;
+        border-left: 4px solid #f59e0b;
+        color: #92400e;
+        border-radius: 6px;
+        padding: 12px 16px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin: 20px 0;
+    }
+    .mail-footer-note {
+        font-size: 0.88rem;
+        color: #475569;
+        margin-top: 20px;
+        line-height: 1.5;
+    }
+    .mail-signature {
+        margin-top: 32px;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    .sig-logo {
+        padding-right: 20px;
+        border-right: 2px solid #e2e8f0;
+    }
+    .sig-title {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #f59e0b;
+    }
+    .sig-title span {
+        color: #0f172a;
+    }
+    .sig-sub {
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: #64748b;
+        letter-spacing: 0.8px;
+    }
+    .sig-info {
+        font-size: 0.85rem;
+        color: #334155;
+    }
+</style>
+
+<div class="page-container glass-effect" style="padding: 2rem; border-radius: 1rem; margin-top: 1rem;">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
         <div style="flex: 1;">
             <h1>Correos Masivos Fin de Semana</h1>
-            <p class="subtitle">Programa o envía correos a clientes para notificaciones de fin de semana.</p>
+            <p class="subtitle" style="margin-bottom: 1.5rem;">Programa o envía correos a clientes para notificaciones de fin de semana.</p>
         </div>
-        <a href="{% url 'gestionar_correos' %}" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; font-weight: 500; text-decoration: none;">
+        <a href="{% url 'gestionar_correos' %}?embed=1" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; font-weight: 500; text-decoration: none;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
             Gestor de Base de Datos
         </a>
@@ -23,19 +111,25 @@
         </div>
     {% endif %}
 
-    <form action="{% url 'correos_masivos' %}" method="POST" style="margin-top: 2rem;">
+    <form action="{% url 'correos_masivos' %}" method="POST" style="margin-top: 1rem;">
         {% csrf_token %}
         <div class="grid" style="gap: 1rem;">
             <div class="form-group">
                 <label for="semana">Número de Semana</label>
-                <input type="number" id="semana" name="semana" value="{{ current_week }}" readonly style="background: rgba(0,0,0,0.5); cursor: not-allowed; color: #a0a0a0;">
+                <input type="number" id="semana" name="semana" value="{{ current_week }}" readonly style="background: rgba(0,0,0,0.1); cursor: not-allowed;">
             </div>
             <div class="form-group">
                 <label for="personal_id">Personal de Turno</label>
                 <select id="personal_id" name="personal_id" required>
                     <option value="">Seleccione al asistente...</option>
                     {% for p in personal_list %}
-                        <option value="{{ p.id }}">{{ p.nombre }}</option>
+                        <option value="{{ p.id }}" 
+                                data-nombre="{{ p.nombre }}" 
+                                data-telefono="{{ p.telefono }}" 
+                                data-correo="{{ p.correo }}"
+                                data-cargo="{{ p.cargo_calculado }}">
+                            {{ p.nombre }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
@@ -58,12 +152,141 @@
             <input type="email" id="correo_prueba" name="correo_prueba" placeholder="Si escribes un correo aquí, SOLO se enviará a esta dirección (ignora a los clientes)">
         </div>
         
-        <p style="margin-top: 1rem; margin-bottom: 2rem; font-size: 0.9rem; color: var(--text-secondary);">
+        <p style="margin-top: 1rem; margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-secondary);">
             Se enviará el correo automáticamente a todos los clientes y centros activos en el sistema, firmados a nombre del personal seleccionado.
         </p>
 
-        <button type="submit" class="btn btn-primary">Enviar Correos Masivos</button>
-        <a href="{% url 'index' %}" class="btn" style="color: var(--text-secondary); margin-left: 1rem;">Cancelar</a>
+        <div style="margin-bottom: 2rem;">
+            <button type="submit" class="btn btn-primary">Enviar Correos Masivos</button>
+            <a href="{% url 'index' %}" class="btn" style="color: var(--text-secondary); margin-left: 1rem;">Cancelar</a>
+        </div>
     </form>
+
+    <!-- Live HTML Embedded Preview -->
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: #f59e0b; margin: 2rem 0 1rem 0;">Vista Previa del Correo Generado:</h3>
+    <div class="live-preview-card">
+        <div class="mail-header">
+            COMUNICADO DE SOPORTE — TURNO FIN DE SEMANA
+        </div>
+
+        <p class="mail-p">Estimados (as):</p>
+        <p class="mail-p">
+            Junto con saludar, informamos que para cualquier requerimiento o solicitud de validación de datos o asistencia técnica remota, se encontrará disponible el siguiente personal de turno este sábado <strong id="pv-sabado">--/--/----</strong> y domingo <strong id="pv-domingo">--/--/----</strong>:
+        </p>
+
+        <div class="mail-box-personal">
+            <div><strong>Asistente de Soporte:</strong> <span id="pv-nombre" style="color: #0284c7; font-weight: 700;">Seleccione personal...</span></div>
+            <div><strong>Contacto telefónico:</strong> <span id="pv-telefono" style="color: #0284c7; font-weight: 600;">+56 9 ...</span></div>
+            <div><strong>Correo electrónico:</strong> <span id="pv-correo" style="color: #0284c7;">correo@innovex.cl</span></div>
+        </div>
+
+        <div class="mail-box-alert">
+            Favor de ser posible a los centros: Indicar disponibilidad de stock de repuestos y uso de los mismos para el apoyo y/o gestión correspondiente.
+        </div>
+
+        <div class="mail-footer-note">
+            Para coordinaciones de ingresos técnicos, favor dirigir solicitudes al correo: <a href="mailto:jefe.area@innovex.cl" style="color: #0284c7;">jefe.area@innovex.cl</a>.<br>
+            Quedamos atentos a sus comentarios y requerimientos.
+        </div>
+
+        <div class="mail-signature">
+            <div class="sig-logo">
+                <div class="sig-title">in<span style="color: #0f172a;">novex</span><sup style="font-size: 10px; color: #0284c7;">®</sup></div>
+                <div class="sig-sub">SOLUCIONES TECNOLÓGICAS</div>
+            </div>
+            <div class="sig-info">
+                <strong id="pv-sig-nombre" style="font-size: 0.95rem; text-transform: uppercase; color: #0f172a;">NOMBRE DEL ASISTENTE</strong><br>
+                <span id="pv-sig-cargo" style="font-size: 0.8rem; color: #64748b; text-transform: uppercase;">ASISTENTE DE SOPORTE</span><br>
+                <span id="pv-sig-contacto" style="font-size: 0.82rem; color: #334155;">📞 +56 9 ... | correo@innovex.cl</span>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+function formatDate(dateStr) {
+    if (!dateStr) return '--/--/----';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateStr;
+}
+
+function getCargoCalculado(nombre) {
+    if (!nombre) return 'ASISTENTE DE SOPORTE';
+    const n = nombre.toLowerCase();
+    if (n.includes('hector') || n.includes('héctor') || n.includes('leonidas')) {
+        return 'ASISTENTE DE SOPORTE SENIOR';
+    } else if (n.includes('leonardo') || n.includes('gabriel') || n.includes('felipe') || n.includes('edwin')) {
+        return 'ASISTENTE DE SOPORTE INTERMEDIO';
+    } else if (n.includes('ivan') || n.includes('iván')) {
+        return 'ASISTENTE DE SOPORTE';
+    }
+    return 'ASISTENTE DE SOPORTE';
+}
+
+function updatePreview() {
+    const select = document.getElementById('personal_id');
+    if (!select) return;
+    const opt = select.options[select.selectedIndex];
+    
+    const fechaSab = document.getElementById('fecha_sabado').value;
+    const fechaDom = document.getElementById('fecha_domingo').value;
+
+    document.getElementById('pv-sabado').textContent = formatDate(fechaSab);
+    document.getElementById('pv-domingo').textContent = formatDate(fechaDom);
+
+    if (opt && opt.value) {
+        const nombre = opt.getAttribute('data-nombre') || opt.text;
+        const telefono = opt.getAttribute('data-telefono') || '';
+        const correo = opt.getAttribute('data-correo') || '';
+        const cargoAttr = opt.getAttribute('data-cargo');
+        const cargo = cargoAttr ? cargoAttr.toUpperCase() : getCargoCalculado(nombre);
+
+        document.getElementById('pv-nombre').textContent = nombre;
+        document.getElementById('pv-telefono').textContent = telefono;
+        document.getElementById('pv-correo').textContent = correo;
+
+        document.getElementById('pv-sig-nombre').textContent = nombre;
+        document.getElementById('pv-sig-cargo').textContent = cargo;
+        document.getElementById('pv-sig-contacto').textContent = `📞 ${telefono} | ${correo}`;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Set default dates for upcoming Saturday and Sunday
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 is Sunday, 6 is Saturday
+    
+    const nextSab = new Date(today);
+    const distSab = (6 - dayOfWeek + 7) % 7;
+    nextSab.setDate(today.getDate() + (distSab === 0 ? 0 : distSab));
+
+    const nextDom = new Date(nextSab);
+    nextDom.setDate(nextSab.getDate() + 1);
+
+    const sabInput = document.getElementById('fecha_sabado');
+    const domInput = document.getElementById('fecha_domingo');
+
+    if (sabInput && !sabInput.value) {
+        sabInput.value = nextSab.toISOString().split('T')[0];
+    }
+    if (domInput && !domInput.value) {
+        domInput.value = nextDom.toISOString().split('T')[0];
+    }
+
+    // Attach real-time listeners
+    document.getElementById('personal_id').addEventListener('change', updatePreview);
+    document.getElementById('fecha_sabado').addEventListener('change', updatePreview);
+    document.getElementById('fecha_domingo').addEventListener('change', updatePreview);
+
+    // Select first available assistant by default if none selected
+    const select = document.getElementById('personal_id');
+    if (select && select.options.length > 1 && !select.value) {
+        select.selectedIndex = 1;
+    }
+    updatePreview();
+});
+</script>
 {% endblock %}

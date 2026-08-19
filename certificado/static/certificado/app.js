@@ -745,6 +745,16 @@ function setupModuleSwitcher() {
       }
     });
   });
+
+  // Auto-activate module from URL parameter ?module=...
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetMod = urlParams.get("module");
+  if (targetMod) {
+    const targetBtn = Array.from(moduleBtns).find(b => b.dataset.module === targetMod);
+    if (targetBtn) {
+      targetBtn.click();
+    }
+  }
 }
 
 function setupTabs() {

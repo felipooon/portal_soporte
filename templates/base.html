@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="es-cl">
+<html lang="es-cl" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,16 +11,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('portalTheme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (document.body) {
+                if (savedTheme === 'dark') {
+                    document.body.classList.add('dark-theme');
+                } else {
+                    document.body.classList.remove('dark-theme');
+                }
+            }
+        });
+    </script>
 </head>
 <body>
-    <div class="background-animation"></div>
-    
     {% if request.GET.embed != '1' %}
     <nav class="navbar glass-effect">
         <div class="nav-container">
             <a href="{% url 'index' %}" class="brand">
-                <img src="https://dataweb.innovex.cl/static/img/innovex.png" alt="Innovex Logo" style="height: 30px; margin-right: 10px;">
-                <span><span style="color: #f1c40f;">In</span>novex</span> <span class="brand-thin">Support</span>
+                <img src="https://dataweb.innovex.cl/static/img/innovex.png" alt="Innovex Logo" style="height: 28px; margin-right: 10px;">
+                <span><span style="color: #d97706;">In</span>novex</span> <span class="brand-thin">Support</span>
             </a>
             <div class="nav-links">
                 <a href="{% url 'index' %}" class="nav-link">Dashboard</a>
@@ -29,7 +40,7 @@
     </nav>
     {% endif %}
 
-    <main class="main-content" {% if request.GET.embed == '1' %}style="padding: 0; margin: 0; max-width: 100%;"{% endif %}>
+    <main class="main-content" {% if request.GET.embed == '1' %}style="padding: 0; margin: 0; max-width: 100%; width: 100%; background: transparent;"{% endif %}>
         {% block content %}
         {% endblock %}
     </main>

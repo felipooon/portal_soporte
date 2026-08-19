@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="es-cl">
+<html lang="es-cl" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,61 +15,200 @@
             padding: 0;
             height: 100vh;
             overflow: hidden;
-            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
         }
         .spa-layout {
             display: flex;
             height: 100vh;
             width: 100vw;
-            background-color: var(--bg-dark);
+            background-color: var(--bg-body);
         }
+        
+        /* Sidebar Styles */
         .spa-sidebar {
-            width: 250px;
-            background: var(--bg-card);
-            border-right: 1px solid var(--glass-border);
+            width: 260px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             z-index: 10;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .spa-brand-container {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
         }
         .spa-brand {
-            padding: 20px;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+        }
+        .spa-brand-title {
+            font-size: 1.45rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
             display: flex;
             align-items: center;
-            border-bottom: 1px solid var(--glass-border);
-            text-decoration: none;
-            color: white;
-            font-size: 1.1rem;
         }
-        .spa-brand img {
-            height: 24px;
-            margin-right: 10px;
+        .brand-in {
+            color: #f59e0b;
         }
+        .brand-novex {
+            color: #0f172a;
+            transition: color 0.3s;
+        }
+        .brand-reg {
+            font-size: 0.6em;
+            vertical-align: super;
+            color: #0284c7;
+            margin-left: 1px;
+            font-weight: 400;
+            transition: color 0.3s;
+        }
+        .spa-brand-subtitle {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #f59e0b;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
+        [data-theme="dark"] .brand-novex {
+            color: #ffffff;
+        }
+        [data-theme="dark"] .brand-reg {
+            color: #38bdf8;
+        }
+        .spa-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        [data-theme="dark"] .spa-status-badge {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
         .spa-nav {
             flex: 1;
-            padding: 10px 0;
+            padding: 15px 12px;
             overflow-y: auto;
         }
+        .spa-category-title {
+            padding: 12px 10px 6px 10px;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.6px;
+        }
         .spa-nav-item {
-            display: block;
-            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 12px;
+            margin-bottom: 4px;
             color: var(--text-secondary);
             text-decoration: none;
-            border-left: 3px solid transparent;
-            transition: all 0.2s;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.15s ease-in-out;
             cursor: pointer;
+            border: 1.5px solid transparent;
         }
         .spa-nav-item:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.03);
             color: var(--text-primary);
         }
+        [data-theme="dark"] .spa-nav-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
         .spa-nav-item.active {
-            background: rgba(var(--primary-rgb), 0.1);
-            color: var(--primary);
-            border-left-color: var(--primary);
+            background: var(--bg-sidebar);
+            color: var(--text-primary);
+            font-weight: 600;
+            border-color: var(--border-dark);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        }
+
+        .badge-live {
+            background: #fef3c7;
+            color: #d97706;
+            border: 1px solid #fde68a;
+            padding: 1px 7px;
+            border-radius: 10px;
+            font-size: 0.65rem;
+            font-weight: 700;
+        }
+
+        /* Content & Top Header Bar */
+        .spa-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-body);
+            overflow: hidden;
+        }
+        .spa-topbar {
+            height: 52px;
+            background: var(--bg-header);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .spa-topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+        }
+        .spa-menu-toggle {
+            cursor: pointer;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+        }
+        .spa-breadcrumbs {
+            font-weight: 500;
+        }
+        .spa-breadcrumbs span {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .spa-theme-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-body);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .spa-theme-toggle:hover {
+            border-color: var(--text-secondary);
         }
         .spa-content {
             flex: 1;
-            background: var(--bg-dark);
             position: relative;
         }
         .spa-iframe {
@@ -80,83 +219,223 @@
     </style>
 </head>
 <body>
-    <div class="background-animation"></div>
-    <div class="spa-layout glass-effect">
+    <div class="spa-layout">
+        <!-- Sidebar Navigation -->
         <aside class="spa-sidebar">
-            <a href="{% url 'index' %}" class="spa-brand">
-                <img src="https://dataweb.innovex.cl/static/img/innovex.png" alt="Innovex Logo">
-                <span><span style="color: #f1c40f;">In</span>novex</span>
-            </a>
+            <div class="spa-brand-container">
+                <a href="{% url 'index' %}" class="spa-brand">
+                    <span class="spa-brand-title">
+                        <span class="brand-in">in</span><span class="brand-novex">novex</span><span class="brand-reg">®</span>
+                    </span>
+                    <span class="spa-brand-subtitle">PORTAL DE SOPORTE</span>
+                </a>
+                <div>
+                    <span class="spa-status-badge">● Servidor Activo</span>
+                </div>
+            </div>
+            
             <nav class="spa-nav">
-                <div style="padding: 10px 20px; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); opacity: 0.7; margin-top: 5px;">Inicio</div>
-                <div class="spa-nav-item active" onclick="loadTool(this, '{% url 'pizarra_embed' %}?embed=1')">
-                    🏠 Pizarra de Turno
+                <!-- PRINCIPAL -->
+                <div class="spa-category-title">PRINCIPAL</div>
+                <div class="spa-nav-item active" data-title="Dashboard General" onclick="loadTool(this, '{% url 'dashboard_general_embed' %}?embed=1', 'Dashboard General')">
+                    <span>📊 Dashboard General</span>
+                </div>
+                <div class="spa-nav-item" data-title="Pizarra de Turno" onclick="loadTool(this, '{% url 'pizarra_embed' %}?embed=1', 'Pizarra de Turno')">
+                    <span>✏️ Pizarra de Turno</span>
+                    <span class="badge-live">Live</span>
                 </div>
                 
-                <div style="padding: 10px 20px; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); opacity: 0.7; margin-top: 15px;">Herramientas Soporte</div>
-                <div class="spa-nav-item" onclick="loadTool(this, '{% url 'correos_masivos' %}?embed=1')">
-                    ✉️ Correos Masivos
+                <!-- OPERACIONES & CERTIFICADOS -->
+                <div class="spa-category-title">OPERACIONES & CERTIFICADOS</div>
+                <div class="spa-nav-item" data-title="Certificado Instalación" onclick="loadTool(this, '/certificado/?embed=1&module=certificado', 'Certificado Instalación')">
+                    <span>📄 Certificado Instalación</span>
                 </div>
-                <div class="spa-nav-item" onclick="loadTool(this, '/certificado/?embed=1')">
-                    📄 Certificado de Instalaciones
+                <div class="spa-nav-item" data-title="Revisor & Verificación" onclick="loadTool(this, '/certificado/?embed=1&module=revisor', 'Revisor & Verificación')">
+                    <span>🔍 Revisor & Verificación</span>
                 </div>
-                
-                <div style="padding: 10px 20px; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); opacity: 0.7; margin-top: 15px;">Planillas y Reportes</div>
-                <div class="spa-nav-item" onclick="loadTool(this, '{% url 'planillas_embed' %}?embed=1')">
-                    📂 Planillas Drive
+                <div class="spa-nav-item" data-title="Ingreso de Técnico" onclick="loadTool(this, '/certificado/?embed=1&module=ingreso_tecnico', 'Ingreso de Técnico')">
+                    <span>📋 Ingreso de Técnico</span>
                 </div>
-                <div class="spa-nav-item" onclick="loadTool(this, '{% url 'calendario' %}?embed=1')">
-                    📅 Calendario
+
+                <!-- COMUNICACIONES -->
+                <div class="spa-category-title">COMUNICACIONES</div>
+                <div class="spa-nav-item" data-title="Correos Fin de Semana" onclick="loadTool(this, '{% url 'correos_masivos' %}?embed=1', 'Correos Fin de Semana')">
+                    <span>✉️ Correos Fin de Semana</span>
                 </div>
-                
-                <div style="padding: 10px 20px; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); opacity: 0.7; margin-top: 15px;">Servicios Innovex</div>
-                <div class="spa-nav-item" onclick="window.open('https://dataweb.innovex.cl', '_blank')" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>🌐 Dataweb</span><span style="font-size: 0.8em; opacity: 0.5;">↗</span>
+
+                <!-- MONITOREO & RECURSOS -->
+                <div class="spa-category-title">MONITOREO & RECURSOS</div>
+                <div class="spa-nav-item" data-title="Poseidón (Dual Monitor)" onclick="loadTool(this, '{% url 'poseidon' %}?embed=1', 'Poseidón (Dual Monitor)')">
+                    <span>🔱 Poseidón (Dual Monitor)</span>
                 </div>
-                <div class="spa-nav-item" onclick="window.open('https://nextcore.innovex.cl/monitor', '_blank')" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>🖥️ Nextcore</span><span style="font-size: 0.8em; opacity: 0.5;">↗</span>
+                <div class="spa-nav-item" data-title="Calendario de Turnos" onclick="loadTool(this, '{% url 'calendario' %}?embed=1', 'Calendario de Turnos')">
+                    <span>📅 Calendario de Turnos</span>
                 </div>
-                <div class="spa-nav-item" onclick="window.open('https://erp.innovex.cl/web#action=106&model=calendar.event&view_type=calendar&menu_id=81', '_blank')" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>⚙️ Odoo</span><span style="font-size: 0.8em; opacity: 0.5;">↗</span>
+
+                <!-- ENLACES RÁPIDOS -->
+                <div class="spa-category-title">ENLACES RÁPIDOS</div>
+                <div class="spa-nav-item" onclick="window.open('https://drive.google.com', '_blank')">
+                    <span>📊 IP Fijas (Sheets)</span><span style="font-size:0.75em; opacity:0.5;">↗</span>
                 </div>
-                <div class="spa-nav-item" onclick="loadTool(this, '{% url 'poseidon' %}?embed=1')">
-                    🔱 Poseidón
+                <div class="spa-nav-item" onclick="window.open('https://drive.google.com', '_blank')">
+                    <span>⚠️ Fallas MAM (Sheets)</span><span style="font-size:0.75em; opacity:0.5;">↗</span>
+                </div>
+                <div class="spa-nav-item" onclick="window.open('https://dataweb.innovex.cl', '_blank')">
+                    <span>🌐 Dataweb Innovex</span><span style="font-size:0.75em; opacity:0.5;">↗</span>
+                </div>
+                <div class="spa-nav-item" onclick="window.open('https://nextcore.innovex.cl/monitor', '_blank')">
+                    <span>🖥️ Nextcore Monitor</span><span style="font-size:0.75em; opacity:0.5;">↗</span>
+                </div>
+                <div class="spa-nav-item" onclick="window.open('https://erp.innovex.cl/web#action=106&model=calendar.event&view_type=calendar&menu_id=81', '_blank')">
+                    <span>⚙️ Odoo ERP</span><span style="font-size:0.75em; opacity:0.5;">↗</span>
                 </div>
             </nav>
         </aside>
-        <main class="spa-content">
-            <iframe id="main-frame" class="spa-iframe" src="{% url 'pizarra_embed' %}?embed=1"></iframe>
+
+        <!-- Main Workspace Area -->
+        <main class="spa-main">
+            <!-- Top Header Bar -->
+            <header class="spa-topbar">
+                <div class="spa-topbar-left">
+                    <span class="spa-menu-toggle">≡</span>
+                    <div class="spa-breadcrumbs">
+                        Portal / <span id="current-page-title">Dashboard General</span>
+                    </div>
+                </div>
+                <div>
+                    <button class="spa-theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()">
+                        <span id="theme-icon">🌙</span> <span id="theme-text">Modo Oscuro</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Iframe Shell -->
+            <div class="spa-content">
+                <iframe id="main-frame" class="spa-iframe" src="{% url 'dashboard_general_embed' %}?embed=1"></iframe>
+            </div>
         </main>
     </div>
 
     <script>
-        function loadTool(element, url) {
-            // Update active state
+        function loadTool(element, url, title) {
+            // Update active state in sidebar
             document.querySelectorAll('.spa-nav-item').forEach(el => el.classList.remove('active'));
             if (element) {
                 element.classList.add('active');
             }
 
+            // Update Breadcrumb Title
+            if (title) {
+                document.getElementById('current-page-title').textContent = title;
+            }
+
             // Update iframe src
             document.getElementById('main-frame').src = url;
             
-            // Save state
+            // Save state in localStorage
             localStorage.setItem('currentToolUrl', url);
+            if (title) {
+                localStorage.setItem('currentToolTitle', title);
+            }
+        }
+
+        window.navigateToTool = function(url, title) {
+            const navItems = document.querySelectorAll('.spa-nav-item');
+            let targetEl = null;
+            for (let el of navItems) {
+                const onclickAttr = el.getAttribute('onclick');
+                if (onclickAttr && onclickAttr.includes(url)) {
+                    targetEl = el;
+                    break;
+                }
+            }
+            loadTool(targetEl, url, title);
+        };
+
+        // Theme Toggle Functionality
+        function syncIframeTheme(theme) {
+            try {
+                const iframe = document.getElementById('main-frame');
+                if (iframe && iframe.contentDocument) {
+                    const docEl = iframe.contentDocument.documentElement;
+                    const bodyEl = iframe.contentDocument.body;
+                    if (docEl) {
+                        docEl.setAttribute('data-theme', theme);
+                    }
+                    if (bodyEl) {
+                        if (theme === 'dark') {
+                            bodyEl.classList.add('dark-theme');
+                        } else {
+                            bodyEl.classList.remove('dark-theme');
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log("Cannot sync cross-origin iframe theme");
+            }
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            if (document.body) {
+                if (theme === 'dark') {
+                    document.body.classList.add('dark-theme');
+                } else {
+                    document.body.classList.remove('dark-theme');
+                }
+            }
+
+            const btnText = document.getElementById('theme-text');
+            const btnIcon = document.getElementById('theme-icon');
+            if (theme === 'dark') {
+                btnText.textContent = 'Modo Claro';
+                btnIcon.textContent = '☀️';
+            } else {
+                btnText.textContent = 'Modo Oscuro';
+                btnIcon.textContent = '🌙';
+            }
+            localStorage.setItem('portalTheme', theme);
+
+            // Synchronize theme instantly with active iframe
+            syncIframeTheme(theme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            setTheme(newTheme);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Load saved theme
+            const savedTheme = localStorage.getItem('portalTheme') || 'light';
+            setTheme(savedTheme);
+
+            // Listen to iframe loads to apply theme instantly
+            const iframe = document.getElementById('main-frame');
+            if (iframe) {
+                iframe.addEventListener('load', () => {
+                    const currentTheme = localStorage.getItem('portalTheme') || 'light';
+                    syncIframeTheme(currentTheme);
+                });
+            }
+
+            // Restore saved tool navigation
             const savedUrl = localStorage.getItem('currentToolUrl');
+            const savedTitle = localStorage.getItem('currentToolTitle');
+
             if (savedUrl) {
-                // Find the sidebar item that matches this URL
                 const navItems = document.querySelectorAll('.spa-nav-item');
                 let found = false;
                 for (let el of navItems) {
                     const onclickAttr = el.getAttribute('onclick');
                     if (onclickAttr && onclickAttr.includes(savedUrl)) {
-                        // Just update classes and src to avoid recursive loadTool call if we want
                         document.querySelectorAll('.spa-nav-item').forEach(e => e.classList.remove('active'));
                         el.classList.add('active');
                         document.getElementById('main-frame').src = savedUrl;
+                        if (savedTitle) {
+                            document.getElementById('current-page-title').textContent = savedTitle;
+                        }
                         found = true;
                         break;
                     }

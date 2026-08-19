@@ -9,11 +9,24 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('portalTheme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      if (document.body) {
+        if (savedTheme === 'dark') {
+          document.body.classList.add('dark-theme');
+        } else {
+          document.body.classList.remove('dark-theme');
+        }
+      }
+    });
+  </script>
 </head>
 <body>
 
   <!-- Encabezado Superior Corporativo Innovex -->
-  <header class="app-header">
+  <header class="app-header" {% if request.GET.embed == '1' %}style="display: none !important;"{% endif %}>
     <div class="logo-title">
       <img src="{% static 'certificado/logo.png' %}" alt="Innovex Chile" class="brand-logo">
       <div class="divider"></div>
@@ -44,10 +57,10 @@
   </header>
 
   <!-- Navegador Principal de Módulos de Soporte -->
-  <div class="module-bar-container" style="background: #0d0e12; border-bottom: 2px solid var(--border-color); padding: 8px 20px; display: flex; gap: 12px; align-items: center; overflow-x: auto;">
+  <div class="module-bar-container" style="background: #0d0e12; border-bottom: 2px solid var(--border-color); padding: 8px 20px; gap: 12px; align-items: center; overflow-x: auto; {% if request.GET.embed == '1' %}display: none !important;{% else %}display: flex;{% endif %}">
     <button class="module-btn active" data-module="certificado" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid #0284c7; background: #0284c7; color: #ffffff; cursor: pointer;">1. Certificado de Instalación</button>
-    <button class="module-btn" data-module="revisor" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); cursor: pointer;">2. Revisor & Verificación Ingreso</button>
-    <button class="module-btn" data-module="ingreso_tecnico" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); cursor: pointer;">3. Información Ingreso Técnico</button>
+    <button class="module-btn" data-module="revisor" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid #0284c7; background: var(--card-bg); color: var(--text-color); cursor: pointer;">2. Revisor & Verificación Ingreso</button>
+    <button class="module-btn" data-module="ingreso_tecnico" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid #0284c7; background: var(--card-bg); color: var(--text-color); cursor: pointer;">3. Información Ingreso Técnico</button>
   </div>
 
   <!-- Contenedor Principal -->
