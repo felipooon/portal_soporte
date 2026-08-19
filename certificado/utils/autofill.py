@@ -36,19 +36,39 @@ def parse_cmd_status(texto: str) -> dict:
 def parse_kernel(texto: str) -> dict:
     """Extrae la versión del Kernel desde uname -r / uname -a / hostnamectl."""
     res = {}
+    in_kernel = False
     for line in texto.splitlines():
         line_strip = line.strip()
-        if "kernel:" in line_strip.lower():
-            res["kernel"] = line_strip.split(":", 1)[1].strip()
+        if not line_strip:
+            continue
+
+        if "--- KERNEL ---" in line_strip or "=== KERNEL ===" in line_strip:
+            in_kernel = True
+            continue
+        if in_kernel and line_strip.startswith("==="):
+            in_kernel = False
+
+        if in_kernel:
+            m = re.search(r"([0-9]+\.[0-9]+\.[0-9]+[-0-9a-zA-Z._]+)", line_strip)
+            if m:
+                res["kernel"] = m.group(1).strip()
+                return res
+
+        m_host = re.search(r"Kernel(?:\s*Version)?:\s*(?:Linux\s*)?([0-9]+\.[0-9]+\.[0-9]+[-0-9a-zA-Z._]+)", line_strip, re.I)
+        if m_host:
+            res["kernel"] = m_host.group(1).strip()
             return res
+
         m_uname = re.search(r"Linux\s+[a-zA-Z0-9._-]+\s+([0-9]+\.[0-9]+\.[0-9]+[^\s]*)", line_strip)
         if m_uname:
-            res["kernel"] = m_uname.group(1)
+            res["kernel"] = m_uname.group(1).strip()
             return res
-        m_ver = re.search(r"^([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-(?:generic|lowlatency|aws|azure|gcp))", line_strip)
-        if m_ver:
-            res["kernel"] = m_ver.group(1)
+
+        m_generic = re.search(r"\b([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-zA-Z0-9._]+)\b", line_strip)
+        if m_generic:
+            res["kernel"] = m_generic.group(1).strip()
             return res
+
     return res
 
 

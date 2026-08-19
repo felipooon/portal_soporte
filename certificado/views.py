@@ -250,7 +250,12 @@ def api_revisor_generar_plantilla(request):
     try:
         body = json.loads(request.body)
         plantilla = RevisorService.generar_plantilla_texto(body)
-        return JsonResponse({"status": "ok", "plantilla_texto": plantilla})
+        html_doc = RevisorService.generar_documento_live_html(body)
+        return JsonResponse({
+            "status": "ok",
+            "plantilla_texto": plantilla,
+            "documento_live_html": html_doc
+        })
     except Exception as e:
         return JsonResponse({"status": "error", "mensaje": str(e)}, status=500)
 

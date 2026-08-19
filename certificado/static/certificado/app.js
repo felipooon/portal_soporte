@@ -241,7 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const inputsRevisor = [
-    "rev_centro", "rev_host", "rev_usuario", "rev_tipo_conexion",
+    "rev_centro", "rev_host", "rev_usuario", "rev_contrasena", "rev_tipo_conexion",
     "rev_sistema_operativo", "rev_kernel", "rev_clave_pc", "rev_dataweb",
     "rev_pcinnovex", "rev_cacheton", "rev_python3", "rev_weather_davis", "rev_visibility_cam",
     "rev_version_equipos", "rev_senal", "rev_voltajes",
@@ -258,6 +258,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  const revContrasenaEl = document.getElementById("rev_contrasena");
+  if (revContrasenaEl) {
+    revContrasenaEl.addEventListener("input", (e) => {
+      const elClave = document.getElementById("rev_clave_pc");
+      if (elClave && (!elClave.value || elClave.dataset.synced !== "custom")) {
+        elClave.value = e.target.value;
+      }
+      construirPlantillaRevisorDesdeFormulario();
+    });
+  }
+  const revClavePcEl = document.getElementById("rev_clave_pc");
+  if (revClavePcEl) {
+    revClavePcEl.addEventListener("input", () => {
+      revClavePcEl.dataset.synced = "custom";
+    });
+  }
+
   // Información para ingreso de técnico
   const btnEjecutarIngresoTecnico = document.getElementById("btnEjecutarIngresoTecnico");
   if (btnEjecutarIngresoTecnico) {
@@ -265,7 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   const btnGenerarPlantillaIngreso = document.getElementById("btnGenerarPlantillaIngreso");
   if (btnGenerarPlantillaIngreso) {
-    btnGenerarPlantillaIngreso.addEventListener("click", generarPlantillaIngreso);
+    btnGenerarPlantillaIngreso.addEventListener("click", () => generarPlantillaIngreso({ notificar: true }));
   }
   const btnCopiarPlantillaIngreso = document.getElementById("btnCopiarPlantillaIngreso");
   if (btnCopiarPlantillaIngreso) {
@@ -273,16 +290,35 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const inputsIngreso = [
-    "ingreso_host", "ingreso_clave_pc", "ingreso_acceso_remoto",
-    "ingreso_observaciones"
+    "ingreso_host", "ingreso_usuario", "ingreso_contrasena", "ingreso_clave_pc", "ingreso_acceso_remoto",
+    "ingreso_repuesto_equipo", "ingreso_repuesto_sensor", "ingreso_repuesto_kit",
+    "ingreso_antena_status", "ingreso_equipos_conectados", "ingreso_voltaje_pilas",
+    "ingreso_observaciones", "ingreso_observaciones_generales"
   ];
   inputsIngreso.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-      el.addEventListener("input", () => generarPlantillaIngreso(true));
-      el.addEventListener("change", () => generarPlantillaIngreso(true));
+      el.addEventListener("input", programarActualizacionIngreso);
+      el.addEventListener("change", programarActualizacionIngreso);
     }
   });
+
+  const ingContrasenaEl = document.getElementById("ingreso_contrasena");
+  if (ingContrasenaEl) {
+    ingContrasenaEl.addEventListener("input", (e) => {
+      const elClave = document.getElementById("ingreso_clave_pc");
+      if (elClave && (!elClave.value || elClave.dataset.synced !== "custom")) {
+        elClave.value = e.target.value;
+      }
+      programarActualizacionIngreso();
+    });
+  }
+  const ingClavePcEl = document.getElementById("ingreso_clave_pc");
+  if (ingClavePcEl) {
+    ingClavePcEl.addEventListener("input", () => {
+      ingClavePcEl.dataset.synced = "custom";
+    });
+  }
 
   const btnCopiarTextoPlanoHeader = document.getElementById("btnCopiarTextoPlanoHeader");
   if (btnCopiarTextoPlanoHeader) {
@@ -359,6 +395,12 @@ document.addEventListener("DOMContentLoaded", () => {
       mostrarTextoPlanoEnPanelDerecho();
     });
   }
+
+  // Pre-generar datos iniciales de Revisor e Ingreso Técnico
+  setTimeout(() => {
+    generarPlantillaRevisor();
+    generarPlantillaIngreso();
+  }, 100);
 
   // Formulario Integrado Repuestos
   document.getElementById("btnToggleFormRepuesto").addEventListener("click", () => {
@@ -603,6 +645,7 @@ function actualizarDropdownTecnicos(encargado) {
 }
 
 let moduloActivoActual = "certificado"; // "certificado", "revisor", "ingreso_tecnico"
+let modoVistaPreviaModulos = "html"; // "html", "texto"
 
 function activarSeccionTab(targetTab) {
   document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
@@ -619,10 +662,12 @@ function activarSeccionTab(targetTab) {
   });
 
   // Re-renderizar listas al navegar para garantizar visualización inmediata
-  try { renderMotesList(); } catch(e) {}
-  try { renderUbicacionesList(); } catch(e) {}
-  try { renderRepuestosList(); } catch(e) {}
-  try { renderRepuestosMotesDropdown(); } catch(e) {}
+  if (moduloActivoActual === "certificado") {
+    try { renderMotesList(); } catch(e) {}
+    try { renderUbicacionesList(); } catch(e) {}
+    try { renderRepuestosList(); } catch(e) {}
+    try { renderRepuestosMotesDropdown(); } catch(e) {}
+  }
 
   if (targetTab === "ingreso_tecnico") {
     prellenarDatosHostIngresoTecnico();
@@ -1422,6 +1467,9 @@ function eliminarAlarma(idx) {
 // RENDERIZADO INSTANTÁNEO A4 LIVE HTML 100% IDÉNTICO A REPORTLAB PDF
 function renderLiveHtmlSheet() {
   try {
+    if (moduloActivoActual !== "certificado") {
+      return;
+    }
     const sheet = document.getElementById("liveHtmlSheet") || document.getElementById("reportlabSheet");
     if (!sheet) return;
 
@@ -2355,6 +2403,7 @@ async function ejecutarRevisorEquipos() {
   const host = document.getElementById("rev_host").value.trim();
   const usuario = document.getElementById("rev_usuario").value.trim();
   const contrasena = document.getElementById("rev_contrasena").value;
+  const clave_pc = document.getElementById("rev_clave_pc")?.value || contrasena;
   const puerto_ssh = document.getElementById("rev_puerto_ssh").value.trim();
   const puerto_telnet = document.getElementById("rev_puerto_telnet").value.trim();
 
@@ -2368,7 +2417,7 @@ async function ejecutarRevisorEquipos() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        centro, host, usuario, contrasena, puerto_ssh, puerto_telnet
+        centro, host, usuario, contrasena, clave_pc, puerto_ssh, puerto_telnet
       })
     });
     const data = await response.json();
@@ -2378,12 +2427,13 @@ async function ejecutarRevisorEquipos() {
 
       if (res.sistema_operativo) setInputValue("rev_sistema_operativo", res.sistema_operativo);
       if (res.kernel) setInputValue("rev_kernel", res.kernel);
-      if (res.clave_pc) setInputValue("rev_clave_pc", res.clave_pc);
+      if (res.clave_pc && res.clave_pc !== "No configurada") setInputValue("rev_clave_pc", res.clave_pc);
+      else if (contrasena) setInputValue("rev_clave_pc", contrasena);
       if (res.dataweb) setInputValue("rev_dataweb", res.dataweb);
 
       if (res.pcinnovex) setInputValue("rev_pcinnovex", res.pcinnovex);
       if (res.cacheton) setInputValue("rev_cacheton", res.cacheton);
-      if (res.python3_cacheton) setInputValue("rev_python3", res.python3_cacheton);
+      if (res.python3_cacheton || res.python3) setInputValue("rev_python3", res.python3_cacheton || res.python3);
       if (res.weather_davis) setInputValue("rev_weather_davis", res.weather_davis);
       if (res.visibility_cam) setInputValue("rev_visibility_cam", res.visibility_cam);
 
@@ -2391,7 +2441,16 @@ async function ejecutarRevisorEquipos() {
       if (res.senal) setInputValue("rev_senal", res.senal);
       if (res.voltajes) setInputValue("rev_voltajes", res.voltajes);
 
-      construirPlantillaRevisorDesdeFormulario();
+      if (res.saturacion) setInputValue("rev_saturacion", res.saturacion);
+      if (res.salinidad) setInputValue("rev_salinidad", res.salinidad);
+      if (res.temperatura) setInputValue("rev_temperatura", res.temperatura);
+      if (res.camara_estado) setInputValue("rev_camara", res.camara_estado);
+      if (res.estacion_estado) setInputValue("rev_estacion", res.estacion_estado);
+
+      if (res.repuesto_equipo) setInputValue("rev_repuesto_equipo", res.repuesto_equipo);
+      if (res.repuesto_sensor) setInputValue("rev_repuesto_sensor", res.repuesto_sensor);
+      if (res.repuesto_kit) setInputValue("rev_repuesto_kit", res.repuesto_kit);
+      generarPlantillaRevisor();
 
       if (data.resultado.error) {
         mostrarToast(`Revisión completada con observaciones: ${data.resultado.error}`, "warning");
@@ -2409,7 +2468,7 @@ async function ejecutarRevisorEquipos() {
   }
 }
 
-function construirPlantillaRevisorDesdeFormulario() {
+function construirPlantillaRevisorTextoClientSide() {
   const centroRaw = document.getElementById("rev_centro")?.value.trim() || "CE-YELCHO";
   let centroTitulo = centroRaw.toUpperCase();
   if (!centroTitulo.startsWith("CE-") && !centroTitulo.startsWith("MW-") && !centroTitulo.startsWith("CENTRO")) {
@@ -2417,20 +2476,22 @@ function construirPlantillaRevisorDesdeFormulario() {
   }
 
   const tipo_conexion = document.getElementById("rev_tipo_conexion")?.value || "Wifi";
-  const sistema_operativo = document.getElementById("rev_sistema_operativo")?.value.trim() || "Linux Ubuntu 20.04 LTS";
+  const so = document.getElementById("rev_sistema_operativo")?.value.trim() || "Linux Ubuntu 20.04 LTS";
   const kernel = document.getElementById("rev_kernel")?.value.trim() || "5.4.0-105-generic";
-  const clave_pc = document.getElementById("rev_clave_pc")?.value.trim() || "No configurada";
+  const clave_pc = document.getElementById("rev_clave_pc")?.value.trim() || document.getElementById("rev_contrasena")?.value.trim() || "No configurada";
   const dataweb = document.getElementById("rev_dataweb")?.value.trim() || "Ok";
 
   function fmtChangeset(val, defaultNum) {
     let str = (val || "").trim();
-    if (!str || str.toUpperCase() === "N/A") return `changeset:   ${defaultNum}`;
-    const m = str.match(/(\d+)/);
+    if (!str || str.toUpperCase() === "N/A" || str.toUpperCase() === "NO DETECTADO") return `changeset:   ${defaultNum}`;
+    const m = str.match(/changeset:\s*(\d+)/i);
     if (m) return `changeset:   ${m[1]}`;
+    const m2 = str.match(/^(\d+)$/);
+    if (m2) return `changeset:   ${m2[1]}`;
     return str;
   }
 
-  const pcinnovex = fmtChangeset(document.getElementById("rev_pcinnovex")?.value, "583");
+  const pcinnovex = fmtChangeset(document.getElementById("rev_pcinnovex")?.value, "387");
   const cacheton = fmtChangeset(document.getElementById("rev_cacheton")?.value, "631");
   const python3_ver = fmtChangeset(document.getElementById("rev_python3")?.value, "415");
   const weather_davis = document.getElementById("rev_weather_davis")?.value.trim() || "1.1.1";
@@ -2446,7 +2507,7 @@ function construirPlantillaRevisorDesdeFormulario() {
     senal = "igual o mayor a " + senal;
   }
 
-  let voltajes = document.getElementById("rev_voltajes")?.value.trim() || "3.28V";
+  let voltajes = document.getElementById("rev_voltajes")?.value.trim() || "3.33V";
   if (voltajes && !voltajes.startsWith("igual o mayor a")) {
     const vVal = voltajes.endsWith("V") || voltajes.endsWith("v") ? voltajes : voltajes + "V";
     voltajes = "igual o mayor a " + vVal;
@@ -2456,43 +2517,29 @@ function construirPlantillaRevisorDesdeFormulario() {
   const salinidad = document.getElementById("rev_salinidad")?.value.trim() || "OK";
   const temperatura = document.getElementById("rev_temperatura")?.value.trim() || "OK";
 
-  const camara = document.getElementById("rev_camara")?.value || "OK";
-  const estacion = document.getElementById("rev_estacion")?.value || "OK";
+  const camara_estado = document.getElementById("rev_camara")?.value || "OK";
+  const estacion_estado = document.getElementById("rev_estacion")?.value || "OK";
 
-  const repuesto_equipo = document.getElementById("rev_repuesto_equipo")?.value || "";
-  const repuesto_sensor = document.getElementById("rev_repuesto_sensor")?.value || "";
-  const repuesto_kit = document.getElementById("rev_repuesto_kit")?.value || "";
-  const repuestos_texto = document.getElementById("rev_repuestos")?.value.trim() || "";
-
-  let repSec = "7. Repuestos: ";
-  if (repuestos_texto) {
-    repSec = `7. Repuestos: ${repuestos_texto}`;
-  } else if (repuesto_equipo || repuesto_sensor || repuesto_kit) {
-    repSec = `7. Repuestos:\n* Equipo: ${repuesto_equipo || 'OK'}\n* Sensor: ${repuesto_sensor || 'OK'}\n* Kit limpieza: ${repuesto_kit || 'OK'}`;
-  }
+  const repuesto_equipo = document.getElementById("rev_repuesto_equipo")?.value || "OK";
+  const repuesto_sensor = document.getElementById("rev_repuesto_sensor")?.value || "OK";
+  const repuesto_kit = document.getElementById("rev_repuesto_kit")?.value || "OK";
 
   const telefono = document.getElementById("rev_telefono")?.value.trim() || "";
   const correo = document.getElementById("rev_correo")?.value.trim() || "";
+  const obs_raw = document.getElementById("rev_observaciones")?.value.trim() || "";
 
-  const obsRaw = document.getElementById("rev_observaciones")?.value.trim() || "";
-  let obsFormatted = "- ----";
-  if (obsRaw && obsRaw !== "-") {
-    const lines = obsRaw.split("\n");
-    const formatted = [];
-    lines.forEach(l => {
-      const lStr = l.trim();
-      if (lStr) {
-        formatted.push(lStr.startsWith("-") ? lStr : "- " + lStr);
-      }
-    });
-    if (formatted.length > 0) obsFormatted = formatted.join("\n");
+  let obs_formatted = "- ----";
+  if (obs_raw && obs_raw !== "-") {
+    const lines = obs_raw.split("\n").map(l => l.trim()).filter(Boolean);
+    if (lines.length > 0) {
+      obs_formatted = lines.map(l => l.startsWith("-") ? l : `- ${l}`).join("\n");
+    }
   }
 
-  const plantilla =
-`VERIFICACIÓN INGRESO  ${centroTitulo}
+  return `VERIFICACIÓN INGRESO  ${centroTitulo}
 1. Datos computador:
 * Tipo Conexión: ${tipo_conexion}
-* Sistema Operativo: ${sistema_operativo}
+* Sistema Operativo: ${so}
 * Kernel: ${kernel}
 * Clave: ${clave_pc}
 * Visualización Dataweb: ${dataweb}
@@ -2510,78 +2557,431 @@ function construirPlantillaRevisorDesdeFormulario() {
 * Saturación 95% - 105%:  ${saturacion}
 * Salinidad: 0Psu - 1Psu: ${salinidad}
 * Temperatura Ambiente: ${temperatura}
-5. Cámara: ${camara}
-6. Estación: ${estacion}
-${repSec}
+5. Cámara: ${camara_estado}
+6. Estación: ${estacion_estado}
+7. Repuesto:
+* Equipo: ${repuesto_equipo}
+* Sensor: ${repuesto_sensor}
+* Kit de limpieza: ${repuesto_kit}
 8. Datos del centro:
 * Teléfono: ${telefono}
 * Correo: ${correo}
 9. Observaciones:
-${obsFormatted}`;
+${obs_formatted}`;
+}
 
-  const elTxt = document.getElementById("txtPlantillaRevisor");
-  if (elTxt) elTxt.value = plantilla;
+function renderHtmlLiveRevisorClientSide() {
+  const centroRaw = document.getElementById("rev_centro")?.value.trim() || "CE-YELCHO";
+  let centroTitulo = centroRaw.toUpperCase();
+  if (centroTitulo.startsWith("CE-")) centroTitulo = centroTitulo.substring(3).trim();
+
+  const host = document.getElementById("rev_host")?.value.trim() || "N/D";
+  const tipo_conexion = document.getElementById("rev_tipo_conexion")?.value || "Wifi";
+  const so = document.getElementById("rev_sistema_operativo")?.value.trim() || "Linux Ubuntu 20.04 LTS";
+  const kernel = document.getElementById("rev_kernel")?.value.trim() || "5.4.0-105-generic";
+  const clave_pc = document.getElementById("rev_clave_pc")?.value.trim() || document.getElementById("rev_contrasena")?.value.trim() || "No configurada";
+  const dataweb = document.getElementById("rev_dataweb")?.value.trim() || "Ok";
+
+  function fmtChangeset(val, defaultNum) {
+    let str = (val || "").trim();
+    if (!str || str.toUpperCase() === "N/A" || str.toUpperCase() === "NO DETECTADO") return `changeset:   ${defaultNum}`;
+    const m = str.match(/changeset:\s*(\d+)/i);
+    if (m) return `changeset:   ${m[1]}`;
+    const m2 = str.match(/^(\d+)$/);
+    if (m2) return `changeset:   ${m2[1]}`;
+    return str;
+  }
+
+  const pcinnovex = fmtChangeset(document.getElementById("rev_pcinnovex")?.value, "387");
+  const cacheton = fmtChangeset(document.getElementById("rev_cacheton")?.value, "631");
+  const python3_ver = fmtChangeset(document.getElementById("rev_python3")?.value, "415");
+  const weather_davis = document.getElementById("rev_weather_davis")?.value.trim() || "1.1.1";
+  const visibility_cam = document.getElementById("rev_visibility_cam")?.value.trim() || "3.6";
+
+  let version_equipos = document.getElementById("rev_version_equipos")?.value.trim() || "v2.0.2";
+  if (version_equipos && !version_equipos.startsWith("v") && !version_equipos.startsWith("V")) {
+    version_equipos = "v" + version_equipos;
+  }
+
+  let senal = document.getElementById("rev_senal")?.value.trim() || "57/198";
+  if (senal && !senal.startsWith("igual o mayor a")) {
+    senal = "igual o mayor a " + senal;
+  }
+
+  let voltajes = document.getElementById("rev_voltajes")?.value.trim() || "3.33V";
+  if (voltajes && !voltajes.startsWith("igual o mayor a")) {
+    const vVal = voltajes.endsWith("V") || voltajes.endsWith("v") ? voltajes : voltajes + "V";
+    voltajes = "igual o mayor a " + vVal;
+  }
+  const voltDefaultVal = voltajes.replace("igual o mayor a", "").trim() || "3.33V";
+
+  const saturacion = document.getElementById("rev_saturacion")?.value.trim() || "OK";
+  const salinidad = document.getElementById("rev_salinidad")?.value.trim() || "OK";
+  const temperatura = document.getElementById("rev_temperatura")?.value.trim() || "OK";
+
+  const camara_estado = document.getElementById("rev_camara")?.value || "OK";
+  const estacion_estado = document.getElementById("rev_estacion")?.value || "OK";
+
+  const repuesto_equipo = document.getElementById("rev_repuesto_equipo")?.value || "OK";
+  const repuesto_sensor = document.getElementById("rev_repuesto_sensor")?.value || "OK";
+  const repuesto_kit = document.getElementById("rev_repuesto_kit")?.value || "OK";
+
+  const telefono = document.getElementById("rev_telefono")?.value.trim() || "N/D";
+  const correo = document.getElementById("rev_correo")?.value.trim() || "N/D";
+  const obs_raw = document.getElementById("rev_observaciones")?.value.trim() || "";
+
+  let obs_formatted = "- ----";
+  if (obs_raw && obs_raw !== "-") {
+    const lines = obs_raw.split("\n").map(l => l.trim()).filter(Boolean);
+    if (lines.length > 0) {
+      obs_formatted = lines.map(l => l.startsWith("-") ? l : `- ${l}`).join("\n");
+    }
+  }
+
+  const nodos = ultimoResultadoRevisor?.nodos_detalle || [];
+  let filasNodosHtml = "";
+  if (nodos.length > 0) {
+    filasNodosHtml = nodos.map(item => {
+      const nid = item.nodo || "-";
+      const nom = htmlEscapeAttr(item.nombre || `Equipo ${nid}`);
+      const mac = htmlEscapeAttr(item.mac || "N/D");
+      const sig = htmlEscapeAttr(item.signal || "N/D");
+      const vStr = htmlEscapeAttr(item.voltaje || voltDefaultVal);
+      const lrx = htmlEscapeAttr(item.last_rx || "N/D");
+      const lect = htmlEscapeAttr(item.lecturas_sensores || "Sin datos");
+      const est = item.estado || "OK";
+      const badgeCls = String(est).toUpperCase().includes("OK") ? "badge-ok" : "badge-warn";
+      return `
+        <tr>
+          <td style="text-align: center;"><strong>#${nid}</strong></td>
+          <td>${nom}</td>
+          <td><code>${mac}</code></td>
+          <td style="text-align: center;">${sig}</td>
+          <td style="text-align: center;">${vStr}</td>
+          <td>${lect}</td>
+          <td style="text-align: center;">${lrx} s</td>
+          <td><span class="badge ${badgeCls}">${htmlEscapeAttr(est)}</span></td>
+        </tr>
+      `;
+    }).join("");
+  } else {
+    const defaultMotes = [
+      { id: 1, nom: "3", mac: "00:15:8D:00:08:E4:BF:C5", sig: "114:120", rx: "12", est: "OK" },
+      { id: 2, nom: "1", mac: "00:15:8D:00:08:BA:90:5D", sig: "78:84", rx: "17", est: "OK" },
+      { id: 3, nom: "MALO", mac: "00:15:8D:00:09:F3:09:96", sig: "174:183", rx: "22", est: "MALO" },
+      { id: 4, nom: "4", mac: "00:15:8D:00:09:F3:09:E3", sig: "57:72", rx: "109", est: "OK" },
+      { id: 5, nom: "1", mac: "00:15:8D:00:05:69:EA:30", sig: "189:189", rx: "8", est: "OK" },
+      { id: 6, nom: "2", mac: "00:15:8D:00:09:6C:A4:35", sig: "198:201", rx: "22", est: "OK" },
+      { id: 7, nom: "1", mac: "00:15:8D:00:09:24:3D:A4", sig: "141:150", rx: "18", est: "OK" }
+    ];
+    filasNodosHtml = defaultMotes.map(m => {
+      const badgeCls = m.est === "OK" ? "badge-ok" : "badge-warn";
+      return `
+        <tr>
+          <td style="text-align: center;"><strong>#${m.id}</strong></td>
+          <td>${htmlEscapeAttr(m.nom)}</td>
+          <td><code>${m.mac}</code></td>
+          <td style="text-align: center;">${m.sig}</td>
+          <td style="text-align: center;">${htmlEscapeAttr(voltDefaultVal)}</td>
+          <td>Sin datos</td>
+          <td style="text-align: center;">${m.rx} s</td>
+          <td><span class="badge ${badgeCls}">${m.est}</span></td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  const motesRaw = ultimoResultadoRevisor?.motes_texto_raw || "1 00:15:8D:00:08:E4:BF:C5   114:120      12  3\n2 00:15:8D:00:08:BA:90:5D   78:84      17  1\n3 00:15:8D:00:09:F3:09:96   174:183      22  MALO\n4 00:15:8D:00:09:F3:09:E3   57:72      109  4\n5 00:15:8D:00:05:69:EA:30   189:189      8  1\n6 00:15:8D:00:09:6C:A4:35   198:201      22  2\n7 00:15:8D:00:09:24:3D:A4   141:150      18  1";
+  const statusRaw = ultimoResultadoRevisor?.salida_status || "Pancoordinator status\nVersion v2.0.2\nMicrolib version 2fa37f3\nMAC: 00:15:8D:00:08:DD:0B:8A\nPan ID: 1313\nChannel: 19\nN of motes attached: 7";
+
+  return `
+    <div class="reportlab-header-box" style="justify-content: center; text-align: center;">
+      <div class="reportlab-header-center" style="width: 100%; text-align: center; font-size: 15px; font-weight: 800; letter-spacing: 0.5px;">
+        VERIFICACIÓN DE INGRESO — ${htmlEscapeAttr(centroTitulo)}
+      </div>
+    </div>
+
+    <div class="reportlab-sec-title">1. Datos del Computador</div>
+    <table class="reportlab-attr-table">
+      <tr><td class="attr">Tipo Conexión</td><td class="val">${htmlEscapeAttr(tipo_conexion)}</td></tr>
+      <tr><td class="attr">Sistema Operativo</td><td class="val">${htmlEscapeAttr(so)}</td></tr>
+      <tr><td class="attr">Kernel</td><td class="val">${htmlEscapeAttr(kernel)}</td></tr>
+      <tr><td class="attr">Clave PC</td><td class="val">${htmlEscapeAttr(clave_pc)}</td></tr>
+      <tr><td class="attr">Visualización Dataweb</td><td class="val">${htmlEscapeAttr(dataweb)}</td></tr>
+    </table>
+
+    <div class="reportlab-sec-title">2. Paquetería del Computador</div>
+    <table class="reportlab-attr-table">
+      <tr><td class="attr">pcinnovex</td><td class="val">${htmlEscapeAttr(pcinnovex)}</td></tr>
+      <tr><td class="attr">cacheton</td><td class="val">${htmlEscapeAttr(cacheton)}</td></tr>
+      <tr><td class="attr">python3</td><td class="val">${htmlEscapeAttr(python3_ver)}</td></tr>
+      <tr><td class="attr">Weather Davis</td><td class="val">${htmlEscapeAttr(weather_davis)}</td></tr>
+      <tr><td class="attr">Visibility-cam</td><td class="val">${htmlEscapeAttr(visibility_cam)}</td></tr>
+    </table>
+
+    <div class="reportlab-sec-title">3. Equipos</div>
+    <table class="reportlab-attr-table">
+      <tr><td class="attr">Versión</td><td class="val">${htmlEscapeAttr(version_equipos)}</td></tr>
+      <tr><td class="attr">Señal</td><td class="val">${htmlEscapeAttr(senal)}</td></tr>
+      <tr><td class="attr">Voltajes</td><td class="val">${htmlEscapeAttr(voltajes)}</td></tr>
+    </table>
+
+    <div class="reportlab-sec-title">Detalle de Nodos Conectados</div>
+    <table class="reportlab-list-table">
+      <thead>
+        <tr>
+          <th style="width: 35px; text-align: center;">Nodo</th>
+          <th>Nombre Equipo</th>
+          <th>Dirección MAC</th>
+          <th style="width: 65px; text-align: center;">Señal</th>
+          <th style="width: 65px; text-align: center;">Voltaje</th>
+          <th>Lecturas Sensores</th>
+          <th style="width: 65px; text-align: center;">Last RX</th>
+          <th style="width: 55px;">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filasNodosHtml}
+      </tbody>
+    </table>
+
+    <div class="reportlab-sec-title">4. Validación de Variación de Mediciones en Superficie</div>
+    <table class="reportlab-attr-table">
+      <tr><td class="attr">Saturación 95% - 105%</td><td class="val">${htmlEscapeAttr(saturacion)}</td></tr>
+      <tr><td class="attr">Salinidad 0Psu - 1Psu</td><td class="val">${htmlEscapeAttr(salinidad)}</td></tr>
+      <tr><td class="attr">Temperatura Ambiente</td><td class="val">${htmlEscapeAttr(temperatura)}</td></tr>
+    </table>
+
+    <div class="reportlab-sec-title">5. Cámara & 6. Estación</div>
+    <table class="reportlab-attr-table">
+      <tr><td class="attr">5. Cámara</td><td class="val">${htmlEscapeAttr(camara_estado)}</td></tr>
+      <tr><td class="attr">6. Estación</td><td class="val">${htmlEscapeAttr(estacion_estado)}</td></tr>
+    </table>
+
+    <div class="reportlab-sec-title">7. Repuesto</div>
+    <table class="reportlab-attr-table">
+      <tr><td class="attr">Equipo</td><td class="val">${htmlEscapeAttr(repuesto_equipo)}</td></tr>
+      <tr><td class="attr">Sensor</td><td class="val">${htmlEscapeAttr(repuesto_sensor)}</td></tr>
+      <tr><td class="attr">Kit de limpieza</td><td class="val">${htmlEscapeAttr(repuesto_kit)}</td></tr>
+    </table>
+
+    <div class="reportlab-sec-title">8. Datos del Centro</div>
+    <table class="reportlab-attr-table">
+      <tr><td class="attr">Teléfono</td><td class="val">${htmlEscapeAttr(telefono)}</td></tr>
+      <tr><td class="attr">Correo</td><td class="val">${htmlEscapeAttr(correo)}</td></tr>
+    </table>
+
+    <div class="reportlab-sec-title">9. Observaciones</div>
+    <div style="background: #f8fafc; border: 1px solid #cccccc; padding: 8px 12px; border-radius: 4px; font-family: monospace; white-space: pre-wrap;">${htmlEscapeAttr(obs_formatted)}</div>
+
+    <div class="reportlab-sec-title">Consola Técnica Raw (STATUS & CMD MOTES)</div>
+    <pre class="console">--- CMD MOTES OUTPUT ---
+${htmlEscapeAttr(motesRaw)}
+
+--- STATUS OUTPUT ---
+${htmlEscapeAttr(statusRaw)}</pre>
+  `;
+}
+
+let temporizadorActualizacionRevisor = null;
+let secuenciaGeneracionRevisor = 0;
+
+function programarActualizacionRevisor() {
+  window.clearTimeout(temporizadorActualizacionRevisor);
+  // Actualizar la vista previa de inmediato en JS
+  construirPlantillaRevisorDesdeFormulario();
+  temporizadorActualizacionRevisor = window.setTimeout(() => {
+    temporizadorActualizacionRevisor = null;
+    generarPlantillaRevisor();
+  }, 300);
+}
+
+function construirPlantillaRevisorDesdeFormulario() {
+  const txt = construirPlantillaRevisorTextoClientSide();
+  const txtArea = document.getElementById("txtPlantillaRevisor");
+  if (txtArea) txtArea.value = txt;
 
   if (moduloActivoActual === "revisor") {
-    const btnToggleTexto = document.getElementById("btnToggleVistaTexto");
-    if (btnToggleTexto && btnToggleTexto.classList.contains("active")) {
-      mostrarTextoPlanoEnPanelDerecho();
+    if (modoVistaPreviaModulos === "texto") {
+      const pre = document.getElementById("preTextoPlanoDerecho");
+      if (pre) pre.textContent = txt;
     } else {
       mostrarVistaPreviaRevisorDerecha();
     }
   }
 }
 
-function generarPlantillaRevisor() {
-  construirPlantillaRevisorDesdeFormulario();
+async function generarPlantillaRevisor({ notificar = false } = {}) {
+  window.clearTimeout(temporizadorActualizacionRevisor);
+  temporizadorActualizacionRevisor = null;
+  const solicitudActual = ++secuenciaGeneracionRevisor;
+
+  const centroRaw = document.getElementById("rev_centro")?.value.trim() || "CE-YELCHO";
+  let centroTitulo = centroRaw.toUpperCase();
+  if (!centroTitulo.startsWith("CE-") && !centroTitulo.startsWith("MW-") && !centroTitulo.startsWith("CENTRO")) {
+    centroTitulo = "CE-" + centroTitulo;
+  }
+
+  const host = document.getElementById("rev_host")?.value.trim() || "";
+  const tipo_conexion = document.getElementById("rev_tipo_conexion")?.value || "Wifi";
+  const sistema_operativo = document.getElementById("rev_sistema_operativo")?.value.trim() || "Linux Ubuntu 20.04 LTS";
+  const kernel = document.getElementById("rev_kernel")?.value.trim() || "5.4.0-105-generic";
+  const clave_pc = document.getElementById("rev_clave_pc")?.value.trim() || document.getElementById("rev_contrasena")?.value.trim() || "No configurada";
+  const dataweb = document.getElementById("rev_dataweb")?.value.trim() || "Ok";
+
+  function fmtChangeset(val, defaultNum) {
+    let str = (val || "").trim();
+    if (!str || str.toUpperCase() === "N/A" || str.toUpperCase() === "NO DETECTADO") return `changeset:   ${defaultNum}`;
+    const m = str.match(/changeset:\s*(\d+)/i);
+    if (m) return `changeset:   ${m[1]}`;
+    const m2 = str.match(/^(\d+)$/);
+    if (m2) return `changeset:   ${m2[1]}`;
+    return str;
+  }
+
+  const pcinnovex = fmtChangeset(document.getElementById("rev_pcinnovex")?.value, "387");
+  const cacheton = fmtChangeset(document.getElementById("rev_cacheton")?.value, "631");
+  const python3_ver = fmtChangeset(document.getElementById("rev_python3")?.value, "415");
+  const weather_davis = document.getElementById("rev_weather_davis")?.value.trim() || "1.1.1";
+  const visibility_cam = document.getElementById("rev_visibility_cam")?.value.trim() || "3.6";
+
+  let version_equipos = document.getElementById("rev_version_equipos")?.value.trim() || "v2.0.2";
+  if (version_equipos && !version_equipos.startsWith("v") && !version_equipos.startsWith("V")) {
+    version_equipos = "v" + version_equipos;
+  }
+
+  let senal = document.getElementById("rev_senal")?.value.trim() || "57/198";
+  if (senal && !senal.startsWith("igual o mayor a")) {
+    senal = "igual o mayor a " + senal;
+  }
+
+  let voltajes = document.getElementById("rev_voltajes")?.value.trim() || "3.33V";
+  if (voltajes && !voltajes.startsWith("igual o mayor a")) {
+    const vVal = voltajes.endsWith("V") || voltajes.endsWith("v") ? voltajes : voltajes + "V";
+    voltajes = "igual o mayor a " + vVal;
+  }
+
+  const saturacion = document.getElementById("rev_saturacion")?.value.trim() || "OK";
+  const salinidad = document.getElementById("rev_salinidad")?.value.trim() || "OK";
+  const temperatura = document.getElementById("rev_temperatura")?.value.trim() || "OK";
+
+  const camara_estado = document.getElementById("rev_camara")?.value || "OK";
+  const estacion_estado = document.getElementById("rev_estacion")?.value || "OK";
+
+  const repuesto_equipo = document.getElementById("rev_repuesto_equipo")?.value || "OK";
+  const repuesto_sensor = document.getElementById("rev_repuesto_sensor")?.value || "OK";
+  const repuesto_kit = document.getElementById("rev_repuesto_kit")?.value || "OK";
+
+  const telefono = document.getElementById("rev_telefono")?.value.trim() || "";
+  const correo = document.getElementById("rev_correo")?.value.trim() || "";
+  const observaciones = document.getElementById("rev_observaciones")?.value || "";
+
+  const nodos_detalle = ultimoResultadoRevisor?.nodos_detalle || [];
+  const motes_texto_raw = ultimoResultadoRevisor?.motes_texto_raw || "";
+  const salida_status = ultimoResultadoRevisor?.salida_status || "";
+
+  const payload = {
+    centro: centroTitulo,
+    host,
+    tipo_conexion,
+    sistema_operativo,
+    kernel,
+    clave_pc,
+    dataweb,
+    pcinnovex,
+    cacheton,
+    python3_cacheton: python3_ver,
+    weather_davis,
+    visibility_cam,
+    version_equipos,
+    senal,
+    voltajes,
+    saturacion,
+    salinidad,
+    temperatura,
+    camara_estado,
+    estacion_estado,
+    repuesto_equipo,
+    repuesto_sensor,
+    repuesto_kit,
+    telefono,
+    correo,
+    observaciones,
+    nodos_detalle,
+    motes_texto_raw,
+    salida_status
+  };
+
+  try {
+    const response = await fetch("/certificado/api/revisor/generar_plantilla", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (solicitudActual !== secuenciaGeneracionRevisor) return "";
+
+    if (data.status === "ok") {
+      const txt = data.plantilla_texto || "";
+      const htmlDoc = data.documento_live_html || "";
+
+      document.getElementById("txtPlantillaRevisor").value = txt;
+      if (!ultimoResultadoRevisor) ultimoResultadoRevisor = {};
+      Object.assign(ultimoResultadoRevisor, payload, {
+        plantilla_texto: txt,
+        documento_live_html: htmlDoc
+      });
+
+      actualizarFrameDocumentoLive();
+
+      if (moduloActivoActual === "revisor" && modoVistaPreviaModulos === "texto") {
+        const pre = document.getElementById("preTextoPlanoDerecho");
+        if (pre) pre.textContent = txt || "Sin texto disponible.";
+      }
+
+      if (notificar) mostrarToast("Plantilla y Documento Live actualizados", "success");
+      return txt;
+    }
+  } catch (err) {
+    console.error("Error al generar plantilla Revisor:", err);
+  }
+  return "";
 }
 
 async function copiarPlantillaRevisor() {
-  construirPlantillaRevisorDesdeFormulario();
-  const txt = document.getElementById("txtPlantillaRevisor").value;
+  let txt = document.getElementById("txtPlantillaRevisor")?.value || "";
+  if (!txt.trim()) {
+    txt = construirPlantillaRevisorTextoClientSide();
+  }
   if (!txt.trim()) {
     mostrarToast("No hay plantilla para copiar.", "warning");
     return;
   }
-  navigator.clipboard.writeText(txt).then(() => {
-    mostrarToast("Plantilla copiada al portapapeles con éxito", "success");
-  }).catch(() => {
-    mostrarToast("No se pudo copiar automáticamente al portapapeles", "error");
-  });
+  const copiado = await copiarTextoAlPortapapeles(txt);
+  const btn = document.getElementById("btnCopiarPlantillaRevisor");
+  if (btn && copiado) {
+    const orig = btn.textContent;
+    btn.textContent = "✓ ¡Copiado!";
+    setTimeout(() => { btn.textContent = orig; }, 1800);
+  }
+  mostrarToast(
+    copiado ? "Plantilla copiada al portapapeles con éxito" : "No se pudo copiar automáticamente al portapapeles",
+    copiado ? "success" : "error"
+  );
 }
 
 function actualizarFrameDocumentoLive() {
   const frame = document.getElementById("frameDocumentoLive");
-  if (!frame) return;
-  if (ultimoResultadoRevisor && ultimoResultadoRevisor.documento_live_html) {
-    frame.srcdoc = ultimoResultadoRevisor.documento_live_html;
-  } else {
-    const centro = document.getElementById("rev_centro").value.trim() || "CE-CENTRO";
-    const host = document.getElementById("rev_host").value.trim() || "127.0.0.1";
-    const tipo_conexion = document.getElementById("rev_tipo_conexion").value;
-    const clave_pc = document.getElementById("rev_clave_pc").value.trim();
-    const dataweb = document.getElementById("rev_dataweb").value.trim() || "Ok";
-    const saturacion = document.getElementById("rev_saturacion").value.trim() || "OK";
-    const salinidad = document.getElementById("rev_salinidad").value.trim() || "OK";
-    const temperatura = document.getElementById("rev_temperatura").value.trim() || "OK";
-
-    fetch("/certificado/api/revisor/verificar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ centro, host, tipo_conexion, clave_pc, dataweb, saturacion, salinidad, temperatura })
-    }).then(r => r.json()).then(data => {
-      if (data.status === "ok" && data.resultado) {
-        ultimoResultadoRevisor = data.resultado;
-        frame.srcdoc = data.resultado.documento_live_html || "";
-      }
-    });
+  if (frame && ultimoResultadoRevisor && ultimoResultadoRevisor.documento_live_html) {
+    if (frame.srcdoc !== ultimoResultadoRevisor.documento_live_html) {
+      frame.srcdoc = ultimoResultadoRevisor.documento_live_html;
+    }
   }
 }
 
-
 function autoRellenarDesdeRevisor() {
   if (!ultimoResultadoRevisor) {
-    const centro = document.getElementById("rev_centro").value.trim();
+    const centro = document.getElementById("rev_centro")?.value.trim();
     if (centro) {
       if (!certificadoState.datos_generales) certificadoState.datos_generales = {};
       certificadoState.datos_generales.location = centro.toLowerCase().replace(/[^a-z0-9_-]/g, "");
@@ -2596,86 +2996,55 @@ function autoRellenarDesdeRevisor() {
 
   const r = ultimoResultadoRevisor;
   if (!certificadoState.datos_generales) certificadoState.datos_generales = {};
+  if (!certificadoState.infraestructura) certificadoState.infraestructura = {};
+  if (!certificadoState.acceso_remoto) certificadoState.acceso_remoto = {};
+  if (!certificadoState.monitoreo_abiotico) certificadoState.monitoreo_abiotico = {};
+
   if (r.centro) {
     certificadoState.datos_generales.location = r.centro.toLowerCase().replace(/[^a-z0-9_-]/g, "");
     certificadoState.datos_generales.nombre_centro = r.centro.toUpperCase();
+    const info = parseLocationInfo(r.centro);
+    if (info.empresa) certificadoState.datos_generales.empresa = info.empresa;
   }
+  if (r.sistema_operativo) certificadoState.infraestructura.sistema_operativo = r.sistema_operativo;
+  if (r.kernel) certificadoState.infraestructura.kernel = r.kernel;
+  if (r.host) certificadoState.acceso_remoto.tun0 = r.host;
+  if (r.version_equipos) certificadoState.monitoreo_abiotico.version = r.version_equipos;
+  if (r.telefono) certificadoState.datos_generales.telefono_centro = r.telefono;
+  if (r.correo) certificadoState.datos_generales.correo_centro = r.correo;
+  if (r.observaciones) certificadoState.observaciones = r.observaciones;
+
   poblarFormularioDesdeState();
-  mostrarToast("Ficha de certificado actualizada desde el Revisor", "success");
+  renderLiveHtmlSheet();
+  mostrarToast("Ficha de certificado actualizada desde el Revisor (Centro, S.O., Kernel, Versión)", "success");
 }
 
-async function actualizarVistaPreviaHTMLRevisor() {
-  const liveSheet = document.getElementById("liveHtmlSheet");
-  if (!liveSheet) return;
-
-  const centro = document.getElementById("rev_centro")?.value.trim() || "CE-YELCHO";
-  const host = document.getElementById("rev_host")?.value.trim() || "";
-  const tipo_conexion = document.getElementById("rev_tipo_conexion")?.value || "Wifi";
-  const sistema_operativo = document.getElementById("rev_sistema_operativo")?.value.trim() || "Linux Ubuntu 20.04 LTS";
-  const kernel = document.getElementById("rev_kernel")?.value.trim() || "5.4.0-105-generic";
-  const clave_pc = document.getElementById("rev_clave_pc")?.value.trim() || "No configurada";
-  const dataweb = document.getElementById("rev_dataweb")?.value.trim() || "Ok";
-
-  const pcinnovex = document.getElementById("rev_pcinnovex")?.value.trim() || "changeset:   583";
-  const cacheton = document.getElementById("rev_cacheton")?.value.trim() || "changeset:   631";
-  const python3_cacheton = document.getElementById("rev_python3")?.value.trim() || "changeset:   415";
-  const weather_davis = document.getElementById("rev_weather_davis")?.value.trim() || "1.1.1";
-  const visibility_cam = document.getElementById("rev_visibility_cam")?.value.trim() || "3.6";
-
-  const version_equipos = document.getElementById("rev_version_equipos")?.value.trim() || "v2.0.2";
-  const senal = document.getElementById("rev_senal")?.value.trim() || "57/198";
-  const voltajes = document.getElementById("rev_voltajes")?.value.trim() || "3.28V";
-
-  const saturacion = document.getElementById("rev_saturacion")?.value.trim() || "OK";
-  const salinidad = document.getElementById("rev_salinidad")?.value.trim() || "OK";
-  const temperatura = document.getElementById("rev_temperatura")?.value.trim() || "OK";
-
-  const camara = document.getElementById("rev_camara")?.value || "OK";
-  const estacion = document.getElementById("rev_estacion")?.value || "OK";
-
-  const repuestos = document.getElementById("rev_repuestos")?.value.trim() || "";
-  const repuesto_equipo = document.getElementById("rev_repuesto_equipo")?.value || "";
-  const repuesto_sensor = document.getElementById("rev_repuesto_sensor")?.value || "";
-  const repuesto_kit = document.getElementById("rev_repuesto_kit")?.value || "";
-
-  const telefono = document.getElementById("rev_telefono")?.value.trim() || "";
-  const correo = document.getElementById("rev_correo")?.value.trim() || "";
-  const observaciones = document.getElementById("rev_observaciones")?.value || "";
-
-  const nodos_detalle = ultimoResultadoRevisor?.nodos_detalle || [];
-  const motes_texto_raw = ultimoResultadoRevisor?.motes_texto_raw || "";
-  const salida_status = ultimoResultadoRevisor?.salida_status || "";
-
-  try {
-    const response = await fetch("/certificado/api/revisor/verificar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        centro, host, tipo_conexion, sistema_operativo, kernel, clave_pc, dataweb,
-        pcinnovex, cacheton, python3_cacheton, weather_davis, visibility_cam,
-        version_equipos, senal, voltajes,
-        saturacion, salinidad, temperatura,
-        camara, estacion, repuestos, repuesto_equipo, repuesto_sensor, repuesto_kit,
-        telefono, correo, observaciones,
-        nodos_detalle, motes_texto_raw, salida_status
-      })
-    });
-    const data = await response.json();
-    if (data.status === "ok" && data.resultado) {
-      ultimoResultadoRevisor = data.resultado;
-      const htmlDoc = data.resultado.documento_live_html || "";
-      liveSheet.innerHTML = `<iframe srcdoc="${htmlEscapeAttr(htmlDoc)}" style="width: 100%; height: 850px; border: none; border-radius: 8px;" title="Live Revisor"></iframe>`;
-    }
-  } catch (err) {
-    console.error("Error al actualizar HTML Live Revisor:", err);
-  }
+function extraerCuerpoHTML(htmlCompleto) {
+  if (!htmlCompleto) return "";
+  const m = htmlCompleto.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  return m ? m[1].trim() : htmlCompleto;
 }
 
 function mostrarVistaPreviaRevisorDerecha() {
-  actualizarVistaPreviaHTMLRevisor();
+  if (modoVistaPreviaModulos === "texto") {
+    mostrarTextoPlanoEnPanelDerecho();
+    return;
+  }
+
+  const liveSheet = document.getElementById("liveHtmlSheet");
+  if (!liveSheet) return;
+
+  document.getElementById("liveHtmlContainer").style.display = "flex";
+  document.getElementById("pdfContainer").style.display = "none";
+  document.getElementById("btnToggleVistaHTML").classList.add("active");
+  if (document.getElementById("btnToggleVistaPDF")) document.getElementById("btnToggleVistaPDF").classList.remove("active");
+  if (document.getElementById("btnToggleVistaTexto")) document.getElementById("btnToggleVistaTexto").classList.remove("active");
+
+  liveSheet.innerHTML = renderHtmlLiveRevisorClientSide();
 }
 
 function mostrarTextoPlanoEnPanelDerecho() {
+  modoVistaPreviaModulos = "texto";
   const liveSheet = document.getElementById("liveHtmlSheet");
   if (!liveSheet) return;
 
@@ -2688,72 +3057,222 @@ function mostrarTextoPlanoEnPanelDerecho() {
   let textoPlano = "";
   if (moduloActivoActual === "revisor") {
     textoPlano = document.getElementById("txtPlantillaRevisor") ? document.getElementById("txtPlantillaRevisor").value : "";
-    if (!textoPlano && ultimoResultadoRevisor && ultimoResultadoRevisor.plantilla_texto) {
-      textoPlano = ultimoResultadoRevisor.plantilla_texto;
+    if (!textoPlano) {
+      textoPlano = construirPlantillaRevisorTextoClientSide();
     }
   } else if (moduloActivoActual === "ingreso_tecnico") {
-    textoPlano = document.getElementById("txtPlantillaIngresoTecnico").value;
-    if (!textoPlano && ultimoResultadoIngreso && ultimoResultadoIngreso.plantilla_texto) {
-      textoPlano = ultimoResultadoIngreso.plantilla_texto;
+    textoPlano = document.getElementById("txtPlantillaIngresoTecnico") ? document.getElementById("txtPlantillaIngresoTecnico").value : "";
+    if (!textoPlano) {
+      textoPlano = construirPlantillaIngresoTextoClientSide();
     }
   }
 
   liveSheet.innerHTML = `
-    <div style="background: #ffffff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-height: 800px; font-family: sans-serif;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid #002d4b; padding-bottom: 8px;">
-        <h3 style="margin: 0; color: #002d4b; font-size: 16px; text-transform: uppercase;">Vista Texto Plano</h3>
-        <button class="btn btn-small btn-secondary" onclick="window.copiarTextoGlobal('preTextoPlanoDerecho')">Copiar Texto</button>
+    <div class="plain-text-preview">
+      <div class="plain-text-preview-header">
+        <h3>Vista Texto Plano</h3>
+        <button class="btn btn-small btn-secondary" id="btnCopiarTextoPlanoDerecho">Copiar Texto</button>
       </div>
-      <pre id="preTextoPlanoDerecho" style="background: #1e293b; color: #f8fafc; padding: 16px; border-radius: 6px; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.5; overflow-x: auto; white-space: pre-wrap; word-break: break-word;">${htmlEscapeAttr(textoPlano || "Sin texto disponible.")}</pre>
+      <pre id="preTextoPlanoDerecho" class="plain-text-preview-content">${htmlEscapeAttr(textoPlano || "Sin texto disponible.")}</pre>
     </div>
   `;
+
+  document.getElementById("btnCopiarTextoPlanoDerecho")?.addEventListener("click", copiarTextoPlanoDerecho);
 }
 
 function htmlEscapeAttr(str) {
   if (!str) return "";
-  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-window.copiarTextoGlobal = function(id) {
-  const element = document.getElementById(id);
-  if (!element) return;
-  const text = element.innerText || element.value;
-  
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).then(() => {
-      mostrarToast('Texto copiado', 'success');
-    }).catch(err => {
-      console.error(err);
-      fallbackCopy(text);
-    });
-  } else {
-    fallbackCopy(text);
-  }
-};
+async function copiarTextoAlPortapapeles(texto) {
+  if (!texto) return false;
 
-function fallbackCopy(text) {
-  const textArea = document.createElement("textarea");
-  textArea.value = text;
-  textArea.style.position = "fixed";
-  textArea.style.left = "-9999px";
-  document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
   try {
-    const successful = document.execCommand('copy');
-    if (successful) {
-      mostrarToast('Texto copiado (modo compatibilidad)', 'success');
-    } else {
-      mostrarToast('No se pudo copiar automáticamente', 'error');
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(texto);
+      return true;
     }
   } catch (err) {
-    mostrarToast('Error al copiar el texto', 'error');
+    console.warn("Portapapeles moderno falló, usando método fallback:", err);
   }
-  document.body.removeChild(textArea);
+
+  try {
+    const areaTemporal = document.createElement("textarea");
+    areaTemporal.value = texto;
+    areaTemporal.style.position = "fixed";
+    areaTemporal.style.top = "-9999px";
+    areaTemporal.style.left = "-9999px";
+    areaTemporal.style.opacity = "0";
+    areaTemporal.setAttribute("readonly", "");
+    document.body.appendChild(areaTemporal);
+    areaTemporal.focus();
+    areaTemporal.select();
+    areaTemporal.setSelectionRange(0, areaTemporal.value.length);
+    const copiado = document.execCommand("copy");
+    document.body.removeChild(areaTemporal);
+    return !!copiado;
+  } catch (err2) {
+    console.error("Error en fallback execCommand:", err2);
+    return false;
+  }
+}
+
+async function copiarTextoPlanoDerecho() {
+  let texto = document.getElementById("preTextoPlanoDerecho")?.textContent || "";
+  if (!texto.trim() || texto === "Sin texto disponible.") {
+    if (moduloActivoActual === "revisor") {
+      texto = construirPlantillaRevisorTextoClientSide();
+    } else if (moduloActivoActual === "ingreso_tecnico") {
+      texto = construirPlantillaIngresoTextoClientSide();
+    }
+  }
+
+  const copiado = await copiarTextoAlPortapapeles(texto);
+  const btn = document.getElementById("btnCopiarTextoPlanoDerecho");
+  if (btn && copiado) {
+    const orig = btn.textContent;
+    btn.textContent = "✓ ¡Copiado!";
+    setTimeout(() => { btn.textContent = orig; }, 1800);
+  }
+  mostrarToast(
+    copiado ? "Texto plano copiado al portapapeles" : "No se pudo copiar el texto plano",
+    copiado ? "success" : "error"
+  );
 }
 
 // MÓDULO INFORMACIÓN PARA INGRESO DE TÉCNICO
 let ultimoResultadoIngreso = null;
+let temporizadorActualizacionIngreso = null;
+let secuenciaGeneracionIngreso = 0;
+
+function construirPlantillaIngresoTextoClientSide() {
+  const dns_host = document.getElementById("ingreso_host")?.value.trim() || "";
+  const clave_pc = document.getElementById("ingreso_clave_pc")?.value.trim() || document.getElementById("ingreso_contrasena")?.value.trim() || "No configurada";
+  const acceso_remoto = document.getElementById("ingreso_acceso_remoto")?.value.trim() || "OK";
+
+  const antena_status = (document.getElementById("ingreso_antena_status")?.value || "").trim();
+  const equipos_conectados = (document.getElementById("ingreso_equipos_conectados")?.value || "").trim();
+  const voltaje_pilas = (document.getElementById("ingreso_voltaje_pilas")?.value || "").trim();
+
+  const observaciones = (document.getElementById("ingreso_observaciones")?.value || "").trim();
+  const observaciones_generales = (document.getElementById("ingreso_observaciones_generales")?.value || PLANTILLA_OBS_GENERALES_DEFAULT).trim();
+
+  function indentTextObs(text) {
+    if (!text) return "";
+    return text.split("\n").map(l => {
+      const s = l.trim();
+      if (!s) return "";
+      if (l.startsWith("    ") || l.startsWith("\t")) return `      - ${s}`;
+      return `  • ${s}`;
+    }).join("\n");
+  }
+
+  function indentTextGen(text) {
+    if (!text) return "";
+    return text.split("\n").map(l => {
+      const s = l.trim();
+      if (!s) return "";
+      if (l.startsWith("    ") || l.startsWith("\t")) return `      - ${s}`;
+      return `  ✓ ${s}`;
+    }).join("\n");
+  }
+
+  return `DNS:${dns_host}
+Clave PC:${clave_pc}
+Acceso remoto: ${acceso_remoto}
+
+Antena status:
+${antena_status || "Sin datos: no fue posible obtener cmd status."}
+
+Equipos conectados:
+${equipos_conectados || "Sin datos: no fue posible obtener cmd motes."}
+
+Voltaje pilas:
+${voltaje_pilas || "Sin datos: se requieren credenciales SSH para consultar los voltajes."}
+
+Observaciones:
+
+${indentTextObs(observaciones)}
+
+Observaciones generales:
+
+${indentTextGen(observaciones_generales)}`;
+}
+
+function renderHtmlLiveIngresoClientSide() {
+  const dns_host = htmlEscapeAttr(document.getElementById("ingreso_host")?.value.trim() || "ce-yelcho.acuimatic.com");
+  const clave_pc = htmlEscapeAttr(document.getElementById("ingreso_clave_pc")?.value.trim() || document.getElementById("ingreso_contrasena")?.value.trim() || "No configurada");
+  const acceso_remoto = htmlEscapeAttr(document.getElementById("ingreso_acceso_remoto")?.value.trim() || "OK");
+
+  const rep_equipo = htmlEscapeAttr(document.getElementById("ingreso_repuesto_equipo")?.value || "OK");
+  const rep_sensor = htmlEscapeAttr(document.getElementById("ingreso_repuesto_sensor")?.value || "OK");
+  const rep_kit = htmlEscapeAttr(document.getElementById("ingreso_repuesto_kit")?.value || "OK");
+
+  const antena_status_raw = document.getElementById("ingreso_antena_status")?.value || "Sin datos";
+  const equipos_conectados_raw = document.getElementById("ingreso_equipos_conectados")?.value || "Sin datos";
+  const voltaje_pilas_raw = document.getElementById("ingreso_voltaje_pilas")?.value || "Sin datos";
+  const observaciones = htmlEscapeAttr(document.getElementById("ingreso_observaciones")?.value || "Sin observaciones registradas.");
+  const obs_generales_raw = document.getElementById("ingreso_observaciones_generales")?.value || PLANTILLA_OBS_GENERALES_DEFAULT;
+
+  return `
+    <div class="reportlab-header-box" style="justify-content: center; text-align: center;">
+      <div class="reportlab-header-center" style="width: 100%; text-align: center; font-size: 15px; font-weight: 800; letter-spacing: 0.5px;">
+        INFORMACIÓN PARA INGRESO DE TÉCNICO
+      </div>
+    </div>
+
+    <div class="reportlab-sec-title">1. Datos Generales & Acceso Remoto</div>
+    <table class="reportlab-attr-table">
+      <tr><td class="attr">DNS / Host</td><td class="val">${dns_host}</td></tr>
+      <tr><td class="attr">Clave PC</td><td class="val">${clave_pc}</td></tr>
+      <tr><td class="attr">Acceso Remoto</td><td class="val">${acceso_remoto}</td></tr>
+    </table>
+
+    <div class="reportlab-sec-title">2. Estado de Repuestos</div>
+    <table class="reportlab-attr-table">
+      <tr><td class="attr">Equipo Repuesto</td><td class="val">${rep_equipo}</td></tr>
+      <tr><td class="attr">Sensor Repuesto</td><td class="val">${rep_sensor}</td></tr>
+      <tr><td class="attr">Kit de Limpieza</td><td class="val">${rep_kit}</td></tr>
+    </table>
+
+    <div class="reportlab-sec-title">3. Antena Status</div>
+    <pre class="console">${htmlEscapeAttr(antena_status_raw)}</pre>
+
+    <div class="reportlab-sec-title">4. Equipos Conectados (cmd motes)</div>
+    <pre class="console">${htmlEscapeAttr(equipos_conectados_raw)}</pre>
+
+    <div class="reportlab-sec-title">5. Voltajes & Logs</div>
+    <pre class="console">${htmlEscapeAttr(voltaje_pilas_raw)}</pre>
+
+    <div class="reportlab-sec-title">6. Observaciones</div>
+    <div style="background: #f8fafc; border: 1px solid #cccccc; padding: 8px 12px; border-radius: 4px; font-family: monospace; white-space: pre-wrap;">${observaciones}</div>
+
+    <div class="reportlab-sec-title">7. Observaciones Generales</div>
+    <div style="background: #f8fafc; border: 1px solid #cccccc; padding: 8px 12px; border-radius: 4px; font-family: monospace; white-space: pre-wrap;">${htmlEscapeAttr(obs_generales_raw)}</div>
+  `;
+}
+
+function programarActualizacionIngreso() {
+  window.clearTimeout(temporizadorActualizacionIngreso);
+  const txt = construirPlantillaIngresoTextoClientSide();
+  const txtArea = document.getElementById("txtPlantillaIngresoTecnico");
+  if (txtArea) txtArea.value = txt;
+
+  if (moduloActivoActual === "ingreso_tecnico") {
+    if (modoVistaPreviaModulos === "texto") {
+      const pre = document.getElementById("preTextoPlanoDerecho");
+      if (pre) pre.textContent = txt;
+    } else {
+      mostrarVistaPreviaIngresoDerecha();
+    }
+  }
+
+  temporizadorActualizacionIngreso = window.setTimeout(() => {
+    temporizadorActualizacionIngreso = null;
+    generarPlantillaIngreso();
+  }, 450);
+}
 
 const PLANTILLA_OBS_GENERALES_DEFAULT = `Actualizar paquetería PC
 
@@ -2792,7 +3311,9 @@ async function ejecutarIngresoTecnico() {
   const clave_pc = document.getElementById("ingreso_clave_pc").value.trim() || contrasena || "No configurada";
   document.getElementById("ingreso_clave_pc").value = clave_pc;
 
-  const acceso_remoto = document.getElementById("ingreso_acceso_remoto").value.trim();
+  const accesoRemotoInput = document.getElementById("ingreso_acceso_remoto");
+  const acceso_remoto = accesoRemotoInput.value.trim() || "OK";
+  accesoRemotoInput.value = acceso_remoto;
   const repuestos_equipo = document.getElementById("ingreso_repuesto_equipo")?.value || "OK";
   const repuestos_sensor = document.getElementById("ingreso_repuesto_sensor")?.value || "OK";
   const repuestos_kit = document.getElementById("ingreso_repuesto_kit")?.value || "OK";
@@ -2833,6 +3354,7 @@ async function ejecutarIngresoTecnico() {
       if (res.voltaje_pilas) document.getElementById("ingreso_voltaje_pilas").value = res.voltaje_pilas;
       if (res.dns !== undefined) document.getElementById("ingreso_host").value = res.dns;
       if (res.clave_pc) document.getElementById("ingreso_clave_pc").value = res.clave_pc;
+      if (res.acceso_remoto) document.getElementById("ingreso_acceso_remoto").value = res.acceso_remoto;
 
       document.getElementById("txtPlantillaIngresoTecnico").value = res.plantilla_texto || "";
       actualizarFrameDocumentoIngresoLive();
@@ -2853,12 +3375,17 @@ async function ejecutarIngresoTecnico() {
   }
 }
 
-async function generarPlantillaIngreso(esSilencioso = false) {
+async function generarPlantillaIngreso({ notificar = false } = {}) {
+  window.clearTimeout(temporizadorActualizacionIngreso);
+  temporizadorActualizacionIngreso = null;
+  const solicitudActual = ++secuenciaGeneracionIngreso;
   const host = document.getElementById("ingreso_host").value.trim();
-  const clave_pc = document.getElementById("ingreso_clave_pc").value.trim() || "No configurada";
+  const clave_pc = document.getElementById("ingreso_clave_pc").value.trim() || document.getElementById("ingreso_contrasena")?.value.trim() || "No configurada";
   document.getElementById("ingreso_clave_pc").value = clave_pc;
 
-  const acceso_remoto = document.getElementById("ingreso_acceso_remoto").value.trim();
+  const accesoRemotoInput = document.getElementById("ingreso_acceso_remoto");
+  const acceso_remoto = accesoRemotoInput.value.trim() || "OK";
+  accesoRemotoInput.value = acceso_remoto;
   const repuestos_equipo = document.getElementById("ingreso_repuesto_equipo")?.value || "OK";
   const repuestos_sensor = document.getElementById("ingreso_repuesto_sensor")?.value || "OK";
   const repuestos_kit = document.getElementById("ingreso_repuesto_kit")?.value || "OK";
@@ -2888,6 +3415,8 @@ async function generarPlantillaIngreso(esSilencioso = false) {
       })
     });
     const data = await response.json();
+    if (solicitudActual !== secuenciaGeneracionIngreso) return "";
+
     if (data.status === "ok") {
       document.getElementById("txtPlantillaIngresoTecnico").value = data.plantilla_texto || "";
       ultimoResultadoIngreso = {
@@ -2906,14 +3435,19 @@ async function generarPlantillaIngreso(esSilencioso = false) {
         documento_live_html: data.documento_live_html
       };
       actualizarFrameDocumentoIngresoLive();
-      actualizarVistaPreviaDerechaPorModulo();
-      if (!esSilencioso) {
-        mostrarToast("Plantilla y Documento Live actualizados", "success");
+      if (moduloActivoActual === "ingreso_tecnico" && modoVistaPreviaModulos === "texto") {
+        const pre = document.getElementById("preTextoPlanoDerecho");
+        if (pre) pre.textContent = data.plantilla_texto || "Sin texto disponible.";
       }
+      if (notificar) mostrarToast("Plantilla y Documento Live actualizados", "success");
+      return data.plantilla_texto || "";
     }
   } catch (err) {
     console.error("Error al generar plantilla ingreso:", err);
+    if (notificar) mostrarToast("No se pudo actualizar la plantilla", "error");
   }
+
+  return "";
 }
 
 function actualizarFrameDocumentoIngresoLive() {
@@ -2924,38 +3458,38 @@ function actualizarFrameDocumentoIngresoLive() {
 }
 
 function mostrarVistaPreviaIngresoDerecha() {
+  if (modoVistaPreviaModulos === "texto") {
+    mostrarTextoPlanoEnPanelDerecho();
+    return;
+  }
+
   const liveSheet = document.getElementById("liveHtmlSheet");
   if (!liveSheet) return;
 
-  if (ultimoResultadoIngreso && ultimoResultadoIngreso.documento_live_html) {
-    liveSheet.innerHTML = `<iframe srcdoc="${htmlEscapeAttr(ultimoResultadoIngreso.documento_live_html)}" style="width: 100%; height: 850px; border: none; border-radius: 8px;" title="Live Ingreso Técnico"></iframe>`;
-  } else {
-    liveSheet.innerHTML = `<div style="padding: 40px; text-align: center; color: #64748b; font-family: sans-serif;">Generando vista previa de Ingreso Técnico...</div>`;
-    generarPlantillaIngreso();
-  }
+  document.getElementById("liveHtmlContainer").style.display = "flex";
+  document.getElementById("pdfContainer").style.display = "none";
+  document.getElementById("btnToggleVistaHTML").classList.add("active");
+  if (document.getElementById("btnToggleVistaPDF")) document.getElementById("btnToggleVistaPDF").classList.remove("active");
+  if (document.getElementById("btnToggleVistaTexto")) document.getElementById("btnToggleVistaTexto").classList.remove("active");
+
+  liveSheet.innerHTML = renderHtmlLiveIngresoClientSide();
 }
 
 async function copiarPlantillaIngreso() {
-  let txt = document.getElementById("txtPlantillaIngresoTecnico").value;
+  let txt = document.getElementById("txtPlantillaIngresoTecnico")?.value || "";
   if (!txt.trim()) {
-    generarPlantillaIngreso();
-    setTimeout(async () => {
-      txt = document.getElementById("txtPlantillaIngresoTecnico").value;
-      if (txt) {
-        try {
-          await navigator.clipboard.writeText(txt);
-          mostrarToast("Plantilla de Ingreso de Técnico copiada al portapapeles", "success");
-        } catch (err) {
-          mostrarToast("No se pudo copiar la plantilla", "error");
-        }
-      }
-    }, 250);
-  } else {
-    try {
-      await navigator.clipboard.writeText(txt);
-      mostrarToast("Plantilla de Ingreso de Técnico copiada al portapapeles", "success");
-    } catch (err) {
-      mostrarToast("No se pudo copiar la plantilla", "error");
-    }
+    txt = construirPlantillaIngresoTextoClientSide();
   }
+
+  const copiado = await copiarTextoAlPortapapeles(txt);
+  const btn = document.getElementById("btnCopiarPlantillaIngreso");
+  if (btn && copiado) {
+    const orig = btn.textContent;
+    btn.textContent = "✓ ¡Copiado!";
+    setTimeout(() => { btn.textContent = orig; }, 1800);
+  }
+  mostrarToast(
+    copiado ? "Plantilla de Ingreso de Técnico copiada al portapapeles" : "No se pudo copiar la plantilla",
+    copiado ? "success" : "error"
+  );
 }

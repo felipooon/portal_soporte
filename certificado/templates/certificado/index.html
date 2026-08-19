@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Certificado de Instalación — Innovex Chile</title>
-  <link rel="stylesheet" href="{% static 'certificado/styles.css' %}?v=1.1">
+  <link rel="stylesheet" href="{% static 'certificado/styles.css' %}?v=2.3">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -804,7 +804,7 @@ Operating System: Ubuntu 24.04.4 LTS
               </div>
               <div class="form-group">
                 <label>Clave del Computador</label>
-                <input type="password" id="rev_clave_pc" autocomplete="off" placeholder="Ingrese la clave del equipo">
+                <input type="text" id="rev_clave_pc" autocomplete="off" placeholder="Ingrese la clave del equipo">
               </div>
               <div class="form-group">
                 <label>Visualización Dataweb</label>
@@ -818,7 +818,7 @@ Operating System: Ubuntu 24.04.4 LTS
             <div class="form-grid">
               <div class="form-group">
                 <label>pcinnovex</label>
-                <input type="text" id="rev_pcinnovex" value="changeset:   583">
+                <input type="text" id="rev_pcinnovex" value="changeset:   387">
               </div>
               <div class="form-group">
                 <label>cacheton</label>
@@ -848,77 +848,84 @@ Operating System: Ubuntu 24.04.4 LTS
               </div>
               <div class="form-group">
                 <label>Señal Mínima / General</label>
-                <input type="text" id="rev_senal" value="57/198">
+                <input type="text" id="rev_senal" value="igual o mayor a 57/198">
               </div>
               <div class="form-group">
                 <label>Voltajes</label>
-                <input type="text" id="rev_voltajes" value="3.28V">
+                <input type="text" id="rev_voltajes" value="igual o mayor a 3.28V">
               </div>
               <div class="form-group">
                 <label>Saturación 95% - 105%</label>
-                <input type="text" id="rev_saturacion" value="OK">
+                <select id="rev_saturacion">
+                  <option value="OK">OK</option>
+                  <option value="No satisfecho">No satisfecho</option>
+                  <option value="No aplica">No aplica</option>
+                </select>
               </div>
               <div class="form-group">
                 <label>Salinidad 0Psu - 1Psu</label>
-                <input type="text" id="rev_salinidad" value="OK">
+                <select id="rev_salinidad">
+                  <option value="OK">OK</option>
+                  <option value="No satisfecho">No satisfecho</option>
+                  <option value="No aplica">No aplica</option>
+                </select>
               </div>
               <div class="form-group">
                 <label>Temperatura Ambiente</label>
-                <input type="text" id="rev_temperatura" value="OK">
+                <select id="rev_temperatura">
+                  <option value="OK">OK</option>
+                  <option value="No satisfecho">No satisfecho</option>
+                  <option value="No aplica">No aplica</option>
+                </select>
               </div>
             </div>
           </div>
 
           <div class="card margin-top">
-            <h2>5. Cámara, 6. Estación & 7. Repuestos</h2>
+            <h2>5. Cámara, 6. Estación & 7. Repuesto</h2>
             <div class="form-grid">
               <div class="form-group">
                 <label>5. Cámara</label>
                 <select id="rev_camara">
                   <option value="OK">OK</option>
+                  <option value="No satisfecho">No satisfecho</option>
+                  <option value="No aplica">No aplica</option>
                   <option value="Pendiente">Pendiente</option>
                   <option value="Presenta atraso">Presenta atraso</option>
-                  <option value="No aplica">No aplica</option>
                 </select>
               </div>
               <div class="form-group">
                 <label>6. Estación</label>
                 <select id="rev_estacion">
                   <option value="OK">OK</option>
+                  <option value="No satisfecho">No satisfecho</option>
+                  <option value="No aplica">No aplica</option>
                   <option value="Pendiente">Pendiente</option>
                   <option value="Presenta atraso">Presenta atraso</option>
-                  <option value="No aplica">No aplica</option>
                 </select>
               </div>
               <div class="form-group">
-                <label>7. Repuestos (Texto o Detalle)</label>
-                <input type="text" id="rev_repuestos" placeholder="Dejar en blanco para formato '7. Repuestos: '">
-              </div>
-              <div class="form-group">
-                <label>Repuesto Equipo</label>
+                <label>Repuesto: Equipo</label>
                 <select id="rev_repuesto_equipo">
-                  <option value="">(No especificar)</option>
                   <option value="OK">OK</option>
+                  <option value="No aplica">No aplica</option>
                   <option value="Pendiente">Pendiente</option>
-                  <option value="N/A">N/A</option>
                 </select>
               </div>
               <div class="form-group">
-                <label>Repuesto Sensor</label>
+                <label>Repuesto: Sensor</label>
                 <select id="rev_repuesto_sensor">
-                  <option value="">(No especificar)</option>
                   <option value="OK">OK</option>
+                  <option value="No aplica">No aplica</option>
                   <option value="Pendiente">Pendiente</option>
-                  <option value="N/A">N/A</option>
                 </select>
               </div>
               <div class="form-group">
-                <label>Kit de Limpieza</label>
+                <label>Repuesto: Kit de limpieza</label>
                 <select id="rev_repuesto_kit">
-                  <option value="">(No especificar)</option>
                   <option value="OK">OK</option>
+                  <option value="No aplica">No aplica</option>
                   <option value="Pendiente">Pendiente</option>
-                  <option value="N/A">N/A</option>
                 </select>
               </div>
             </div>
@@ -974,7 +981,7 @@ Operating System: Ubuntu 24.04.4 LTS
               </div>
               <div class="form-group">
                 <label>Clave PC</label>
-                <input type="password" id="ingreso_clave_pc" autocomplete="off" placeholder="Ingrese la clave del equipo">
+                <input type="text" id="ingreso_clave_pc" autocomplete="off" placeholder="Ingrese la clave del equipo">
               </div>
               <div class="form-group span-2">
                 <label>Acceso remoto</label>
@@ -1040,6 +1047,6 @@ Operating System: Ubuntu 24.04.4 LTS
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <script src="{% static 'certificado/app.js' %}?v=1.1"></script>
+  <script src="{% static 'certificado/app.js' %}?v=2.3"></script>
 </body>
 </html>
