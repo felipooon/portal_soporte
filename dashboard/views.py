@@ -17,6 +17,21 @@ def index(request):
         'bitacora': bitacora
     })
 
+def index_alternativo(request):
+    bitacora, created = Bitacora.objects.get_or_create(id=1)
+    return render(request, 'dashboard/index_alternativo.html', {
+        'bitacora': bitacora
+    })
+
+def pizarra_embed(request):
+    bitacora, created = Bitacora.objects.get_or_create(id=1)
+    return render(request, 'dashboard/pizarra_embed.html', {
+        'bitacora': bitacora
+    })
+
+def planillas_embed(request):
+    return render(request, 'dashboard/planillas_embed.html')
+
 def actualizar_bitacora(request):
     if request.method == 'POST':
         try:
@@ -352,3 +367,96 @@ def music_status(request):
 
 def poseidon(request):
     return render(request, 'dashboard/poseidon.html')
+
+def api_poseidon_status(request):
+    import requests
+    sites = {
+        'llancacheo': 'http://ce-llancacheo-inyeccion.acuimatic.com:8000/',
+        'aulen': 'http://ce-aulen-inyeccion.acuimatic.com:8000/'
+    }
+    status = {}
+    for name, url in sites.items():
+        try:
+            # Short timeout so it doesn't block long if down
+            r = requests.get(url, timeout=3)
+            status[name] = r.status_code == 200
+        except Exception:
+            status[name] = False
+    return JsonResponse(status)
+
+def api_poseidon_ping_interno(request):
+    import paramiko
+    import os
+    
+    # We define the IPs per the user request
+    target_ips = {
+        '192.168.1.10': 'PC Inyección',
+        '192.168.1.110': 'Ubiquiti Pontón',
+        '192.168.1.111': 'Ubiquiti Plataforma',
+        '192.168.1.1': 'Router Plataforma',
+        'flowpresor_1': 'Flowpresor 1',
+        'flowpresor_2': 'Flowpresor 2',
+        'oxypresor_1': 'Oxypresor 1',
+        'oxypresor_2': 'Oxypresor 2',
+    }
+    
+    # Configurations
+    sites = {
+        'llancacheo': {
+            'host': 'ce-llancacheo-inyeccion.acuimatic.com',
+            'user': os.environ.get('LLANCACHEO_SSH_USER', 'root'),
+            'pass': os.environ.get('LLANCACHEO_SSH_PASS', '')
+        },
+        'aulen': {
+            'host': 'ce-aulen-inyeccion.acuimatic.com',
+            'user': os.environ.get('AULEN_SSH_USER', 'root'),
+            'pass': os.environ.get('AULEN_SSH_PASS', '')
+        }
+    }
+    
+    results = {}
+    
+    for site_name, site_config in sites.items():
+        site_results = {}
+        if not site_config['pass']:
+            # If password is not configured, we return error for all
+            for ip, name in target_ips.items():
+                site_results[name] = {'ip': ip, 'status': 'error', 'msg': 'Falta clave en .env'}
+            results[site_name] = site_results
+            continue
+            
+        try:
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            # We connect with a short timeout to avoid freezing if the main host is down
+            ssh.connect(
+                hostname=site_config['host'],
+                username=site_config['user'],
+                password=site_config['pass'],
+                timeout=5,
+                auth_timeout=5
+            )
+            
+            for ip, name in target_ips.items():
+                # Skip placeholders
+                if not ip.startswith('192.'):
+                    site_results[name] = {'ip': ip, 'status': 'unknown', 'msg': 'Pendiente de definir IP'}
+                    continue
+                    
+                # Execute ping -c 1 -W 2 (1 packet, 2 seconds timeout)
+                stdin, stdout, stderr = ssh.exec_command(f"ping -c 1 -W 2 {ip}", timeout=3)
+                exit_status = stdout.channel.recv_exit_status()
+                
+                if exit_status == 0:
+                    site_results[name] = {'ip': ip, 'status': 'online', 'msg': 'En línea'}
+                else:
+                    site_results[name] = {'ip': ip, 'status': 'offline', 'msg': 'Fuera de línea'}
+                    
+            ssh.close()
+        except Exception as e:
+            for ip, name in target_ips.items():
+                site_results[name] = {'ip': ip, 'status': 'error', 'msg': f'Error SSH: {str(e)[:20]}...'}
+                
+        results[site_name] = site_results
+        
+    return JsonResponse(results)

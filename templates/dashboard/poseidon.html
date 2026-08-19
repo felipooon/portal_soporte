@@ -3,29 +3,83 @@
 {% block title %}Poseidón - Monitor Inyección{% endblock %}
 
 {% block content %}
-<header style="text-align: center; margin-bottom: 2rem;">
-    <h1>Poseidón</h1>
-    <p class="subtitle">Monitor de tableros de inyección multipantalla</p>
-    <a href="{% url 'index' %}" class="btn" style="display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; text-decoration: none; margin-top: 10px; transition: 0.3s;">
-        ← Volver al Dashboard
-    </a>
+<!-- Header con botón lanzador a la derecha -->
+<header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 20px;">
+    <div>
+        <h1 style="margin: 0;">Poseidón</h1>
+        <p class="subtitle" style="margin: 5px 0 0 0;">Monitor de Inyección y Red Interna</p>
+    </div>
+    
+    <div style="display: flex; gap: 15px;">
+        <button onclick="launchMonitors()" style="background: rgba(241, 196, 15, 0.2); color: #f1c40f; border: 1px solid rgba(241, 196, 15, 0.5); padding: 10px 20px; font-size: 0.95rem; font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px;">
+            <span>🖥️</span> Monitoreo Dual Externo
+        </button>
+        <a href="{% url 'index' %}" class="btn" style="display: flex; align-items: center; padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; text-decoration: none; transition: 0.3s; font-size: 0.95rem;">
+            ← Volver
+        </a>
+    </div>
 </header>
 
-<div class="card glass-effect" style="max-width: 600px; margin: 40px auto; padding: 30px; text-align: center;">
-    <h2 style="color: var(--text-primary); margin-top: 0;">🚀 Lanzador Multipantalla</h2>
-    <p style="color: var(--text-secondary); margin-bottom: 30px;">
-        Como los servidores origen bloquean la visualización incrustada por seguridad, 
-        hemos creado este lanzador. Al presionar el botón, se abrirán dos ventanas independientes 
-        que se acomodarán automáticamente (una a la izquierda y otra a la derecha) para que puedas 
-        monitorearlas al mismo tiempo.
-    </p>
+<!-- Barra de estado general constante -->
+<div class="glass-effect" style="display: flex; gap: 20px; padding: 15px 25px; border-radius: 10px; margin-bottom: 30px; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);">
+    <span style="color: var(--text-secondary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Estado Servidores:</span>
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-weight: 600;">Llancacheo:</span>
+        <span id="status-llancacheo" style="color: var(--text-secondary); font-size: 0.95rem;">⏳ Verificando...</span>
+    </div>
+    <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2);"></div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-weight: 600;">Aulen:</span>
+        <span id="status-aulen" style="color: var(--text-secondary); font-size: 0.95rem;">⏳ Verificando...</span>
+    </div>
+</div>
 
-    <button onclick="launchMonitors()" style="background: #f1c40f; color: #1a1a2e; border: none; padding: 15px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 10px; cursor: pointer; transition: 0.3s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;">
-        <span style="font-size: 1.5rem;">🖥️</span> Iniciar Monitoreo Dual
-    </button>
+<!-- Contenido Principal: Red Interna -->
+<div class="card glass-effect" style="max-width: 1000px; margin: 0 auto; padding: 35px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; flex-wrap: wrap; gap: 20px;">
+        <div>
+            <h2 style="color: var(--text-primary); margin-top: 0; margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.5rem;">🔍</span> Verificador de Equipos Internos
+            </h2>
+            <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">Realiza pings a través de un túnel SSH seguro hacia la red de cada centro.</p>
+        </div>
+        <button id="btn-ping-interno" onclick="checkInternalPing()" style="background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; transition: 0.3s; font-size: 1rem; font-weight: 600; box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.3);">
+            ↻ Iniciar Verificación
+        </button>
+    </div>
+
+    <!-- Contenedor de Resultados -->
+    <div id="ping-results-container" style="display: none; background: rgba(0,0,0,0.2); padding: 25px; border-radius: 12px; border: 1px solid var(--glass-border);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px;">
+            <div>
+                <h3 style="color: #f1c40f; margin-top: 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 20px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                    📍 Llancacheo
+                </h3>
+                <ul id="ping-llancacheo" style="list-style: none; padding: 0; margin: 0; font-size: 0.95rem;">
+                    <li style="color: var(--text-secondary);">Esperando...</li>
+                </ul>
+            </div>
+            <div>
+                <h3 style="color: #f1c40f; margin-top: 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 20px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                    📍 Aulen
+                </h3>
+                <ul id="ping-aulen" style="list-style: none; padding: 0; margin: 0; font-size: 0.95rem;">
+                    <li style="color: var(--text-secondary);">Esperando...</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estado Inicial -->
+    <div id="ping-initial-state" style="text-align: center; padding: 60px 20px; color: var(--text-secondary); background: rgba(0,0,0,0.1); border-radius: 12px; border: 1px dashed rgba(255,255,255,0.1);">
+        <span style="font-size: 3rem; opacity: 0.5; display: block; margin-bottom: 15px;">📡</span>
+        <span style="font-size: 1.1rem;">Presiona "Iniciar Verificación" para conectar por SSH<br>y comprobar el estado de los equipos locales.</span>
+    </div>
 </div>
 
 <script>
+
+
 function launchMonitors() {
     // Calculamos la mitad del ancho de la pantalla actual
     const width = window.screen.availWidth / 2;
@@ -45,5 +99,101 @@ function launchMonitors() {
         `width=${width},height=${height},left=${width},top=0,location=no,toolbar=no,menubar=no`
     );
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    fetch("{% url 'api_poseidon_status' %}")
+        .then(response => response.json())
+        .then(data => {
+            const llStatus = document.getElementById('status-llancacheo');
+            if (data.llancacheo) {
+                llStatus.innerHTML = '🟢 En Línea';
+                llStatus.style.color = 'var(--success)';
+            } else {
+                llStatus.innerHTML = '🔴 Fuera de Línea';
+                llStatus.style.color = 'var(--danger)';
+            }
+            
+            const aulenStatus = document.getElementById('status-aulen');
+            if (data.aulen) {
+                aulenStatus.innerHTML = '🟢 En Línea';
+                aulenStatus.style.color = 'var(--success)';
+            } else {
+                aulenStatus.innerHTML = '🔴 Fuera de Línea';
+                aulenStatus.style.color = 'var(--danger)';
+            }
+        })
+        .catch(err => {
+            document.getElementById('status-llancacheo').innerHTML = '⚪ Desconocido';
+            document.getElementById('status-aulen').innerHTML = '⚪ Desconocido';
+        });
+});
+
+
+function checkInternalPing() {
+    const btn = document.getElementById('btn-ping-interno');
+    const container = document.getElementById('ping-results-container');
+    const listLlan = document.getElementById('ping-llancacheo');
+    const listAulen = document.getElementById('ping-aulen');
+
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Conectando vía SSH y verificando IPs... (puede tardar unos segundos)';
+    btn.style.opacity = '0.7';
+    container.style.display = 'block';
+    listLlan.innerHTML = '<li style="color: var(--text-secondary);">Ejecutando pings...</li>';
+    listAulen.innerHTML = '<li style="color: var(--text-secondary);">Ejecutando pings...</li>';
+
+    fetch("{% url 'api_poseidon_ping_interno' %}")
+        .then(response => response.json())
+        .then(data => {
+            function renderList(siteData, listElement) {
+                listElement.innerHTML = '';
+                for (const [name, info] of Object.entries(siteData)) {
+                    const li = document.createElement('li');
+                    li.style.marginBottom = '5px';
+                    
+                    let statusIcon = '⚪';
+                    let color = 'var(--text-secondary)';
+                    
+                    if (info.status === 'online') {
+                        statusIcon = '🟢';
+                        color = 'var(--success)';
+                    } else if (info.status === 'offline') {
+                        statusIcon = '🔴';
+                        color = 'var(--danger)';
+                    } else if (info.status === 'error') {
+                        statusIcon = '⚠️';
+                        color = 'var(--warning)';
+                    }
+
+                    li.innerHTML = `<span style="display:inline-block; width: 120px; font-weight: 500;">${name}</span> <span style="font-family: monospace; font-size: 0.8rem; opacity: 0.7; margin-right: 10px;">${info.ip}</span> <span style="color: ${color};">${statusIcon} ${info.msg}</span>`;
+                    listElement.appendChild(li);
+                }
+            }
+
+            renderList(data.llancacheo, listLlan);
+            renderList(data.aulen, listAulen);
+        })
+        .catch(err => {
+            listLlan.innerHTML = `<li style="color: var(--danger);">Error al contactar API</li>`;
+            listAulen.innerHTML = `<li style="color: var(--danger);">Error al contactar API</li>`;
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '↻ Volver a Verificar Red Interna';
+            btn.style.opacity = '1';
+        });
+}
+
+
+
+// Modificamos un poco checkInternalPing para manejar la vista inicial
+const originalCheck = checkInternalPing;
+checkInternalPing = function() {
+    document.getElementById('ping-initial-state').style.display = 'none';
+    const btn = document.getElementById('btn-ping-interno');
+    btn.innerHTML = '⏳ Verificando...';
+    originalCheck();
+}
+
 </script>
 {% endblock %}

@@ -15,6 +15,7 @@
 <body>
     <div class="background-animation"></div>
     
+    {% if request.GET.embed != '1' %}
     <nav class="navbar glass-effect">
         <div class="nav-container">
             <a href="{% url 'index' %}" class="brand">
@@ -26,14 +27,17 @@
             </div>
         </div>
     </nav>
+    {% endif %}
 
-    <main class="main-content">
+    <main class="main-content" {% if request.GET.embed == '1' %}style="padding: 0; margin: 0; max-width: 100%;"{% endif %}>
         {% block content %}
         {% endblock %}
     </main>
 
+    {% if request.GET.embed != '1' %}
     <footer class="footer">
         <p>&copy; {% now "Y" %} Equipo de Soporte Innovex.</p>
     </footer>
+    {% endif %}
 </body>
 </html>

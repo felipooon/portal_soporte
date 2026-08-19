@@ -145,3 +145,5 @@ EMAIL_USE_TLS = True
 # Se leen desde el entorno para no subir contraseñas a GitHub
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'tu-correo@innovex.cl')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'tu-contraseña')
+
+X_FRAME_OPTIONS = 'SAMEORIGIN'
