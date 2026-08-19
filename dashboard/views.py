@@ -17,9 +17,12 @@ def index(request):
         'bitacora': bitacora
     })
 
-def index_alternativo(request):
+def index_antiguo(request):
+    """
+    Renderiza el dashboard antiguo con la vista original.
+    """
     bitacora, created = Bitacora.objects.get_or_create(id=1)
-    return render(request, 'dashboard/index_alternativo.html', {
+    return render(request, 'dashboard/index_antiguo.html', {
         'bitacora': bitacora
     })
 

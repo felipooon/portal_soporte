@@ -3,7 +3,7 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
-    path('alternativo', views.index_alternativo, name='dashboard_alternativo'),
+    path('antiguo', views.index_antiguo, name='index_antiguo'),
     path('pizarra-embed', views.pizarra_embed, name='pizarra_embed'),
     path('planillas-drive', views.planillas_embed, name='planillas_embed'),
     path('correos-masivos/', views.correos_masivos, name='correos_masivos'),

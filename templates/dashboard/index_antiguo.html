@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Innovex Soporte{% endblock %}
+
+{% block content %}
+<header style="text-align: center; margin-bottom: 3rem;">
+    <h1>Portal de Soporte</h1>
+    <p class="subtitle">Herramientas y servicios internos para el equipo de Innovex</p>
+</header>
+
+<h2 class="section-title">Bitácora / Pizarra de Turno</h2>
+<div class="card glass-effect" style="margin-bottom: 3rem; padding: 1.5rem; position: relative;">
+    <p style="margin-top: 0; color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.9rem;">
+        📝 Handover rápido para el equipo. <span id="bitacora-status" style="float: right; color: var(--success); font-size: 0.8rem;">Última act: {{ bitacora.actualizado_en|date:"d/m/Y H:i" }}</span>
+    </p>
+    <textarea id="bitacora-texto" class="glass-effect" style="width: 100%; height: 300px; resize: vertical; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: var(--text-primary); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 1.1rem; line-height: 1.5;">{{ bitacora.texto }}</textarea>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('bitacora-texto');
+    const statusSpan = document.getElementById('bitacora-status');
+    let bitacoraTimeout;
+
+    if(textarea) {
+        textarea.addEventListener('input', function() {
+            statusSpan.textContent = 'Escribiendo...';
+            statusSpan.style.color = 'var(--warning)';
+            
+            clearTimeout(bitacoraTimeout);
+            bitacoraTimeout = setTimeout(() => {
+                statusSpan.textContent = 'Guardando...';
+                fetch("{% url 'actualizar_bitacora' %}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: JSON.stringify({texto: textarea.value})
+                })
+                .then(r => r.json())
+                .then(d => {
+                    if(d.status === 'ok') {
+                        statusSpan.textContent = 'Guardado ' + d.actualizado_en;
+                        statusSpan.style.color = 'var(--success)';
+                    }
+                });
+            }, 1000);
+        });
+
+        // Actualización periódica (Polling)
+        setInterval(() => {
+            // Solo actualizamos si el usuario no tiene el cursor puesto en la pizarra (para no interrumpir su escritura)
+            if (document.activeElement !== textarea) {
+                fetch("{% url 'actualizar_bitacora' %}")
+                .then(r => r.json())
+                .then(d => {
+                    if (d.status === 'ok') {
+                        // Si el texto que viene del servidor es diferente al actual, lo actualizamos
+                        if (textarea.value !== d.texto) {
+                            textarea.value = d.texto;
+                            statusSpan.textContent = 'Actualizado ' + d.actualizado_en;
+                            statusSpan.style.color = 'var(--success)';
+                        }
+                    }
+                })
+                .catch(err => console.error("Error al actualizar pizarra:", err));
+            }
+        }, 5000); // Revisa cada 5 segundos
+    }
+});
+</script>
+
+<h2 class="section-title">Herramientas Soporte</h2>
+<div class="grid">
+    {% comment %}
+    <a href="{% url 'trac_wiki' %}" class="card glass-effect">
+        <div class="card-icon">📚</div>
+        <h3>Buscador Trac Wiki</h3>
+        <p>Buscador inteligente y explorador del índice de procedimientos internos.</p>
+    </a>
+    {% endcomment %}
+
+    <a href="{% url 'correos_masivos' %}" class="card glass-effect">
+        <div class="card-icon">✉️</div>
+        <h3>Correos Masivos Fin de Semana</h3>
+        <p>Herramienta para programar y enviar comunicaciones masivas a clientes durante los fines de semana.</p>
+    </a>
+
+    <a href="{% url 'certificado_index' %}" class="card glass-effect">
+        <div class="card-icon">📄</div>
+        <h3>Certificado de Instalaciones</h3>
+        <p>Generación y consulta de certificados para las instalaciones de equipos y sistemas.</p>
+    </a>
+</div>
+
+<h2 class="section-title">Planillas y Reportes</h2>
+<div class="grid">
+    <a href="https://docs.google.com/spreadsheets/d/1HAMmFlPS8s4N8sIgcZLLryEVQzIsWRxoU5ST3oBZDQM/edit?gid=1731426176#gid=1731426176"
+        target="_blank" class="card glass-effect">
+        <div class="card-icon">📊</div>
+        <h3>IP Fijas</h3>
+        <p>Planilla Google Sheets de registro de IPs fijas de clientes e instalaciones.</p>
+    </a>
+
+    <a href="https://docs.google.com/spreadsheets/d/1bwpqpb3B0EtWXZdNWAPQNYis9KRtD2NNehN9fIfwvWY/edit?gid=398395734#gid=398395734"
+        target="_blank" class="card glass-effect">
+        <div class="card-icon">⚠️</div>
+        <h3>Fallas MAM</h3>
+        <p>Planilla Google Sheets para el seguimiento y reporte de Fallas MAM.</p>
+    </a>
+
+    <a href="{% url 'calendario' %}" class="card glass-effect">
+        <div class="card-icon">📅</div>
+        <h3>Calendario</h3>
+        <p>Vista embebida del calendario de turnos y actividades del equipo.</p>
+    </a>
+</div>
+
+<h2 class="section-title">Servicios Innovex</h2>
+<div class="grid">
+    <a href="https://dataweb.innovex.cl" target="_blank" class="card glass-effect">
+        <div class="card-icon">🌐</div>
+        <h3>Dataweb</h3>
+        <p>Plataforma de datos y servicios web para clientes de Innovex.</p>
+    </a>
+
+    <a href="https://nextcore.innovex.cl/monitor" target="_blank" class="card glass-effect">
+        <div class="card-icon">🖥️</div>
+        <h3>Nextcore</h3>
+        <p>Monitor del sistema Nextcore para equipos e instalaciones.</p>
+    </a>
+
+    <a href="https://erp.innovex.cl/web#action=106&model=calendar.event&view_type=calendar&menu_id=81" target="_blank"
+        class="card glass-effect">
+        <div class="card-icon">⚙️</div>
+        <h3>Odoo</h3>
+        <p>Acceso directo al calendario y planificación del ERP corporativo.</p>
+    </a>
+
+    <a href="{% url 'poseidon' %}" class="card glass-effect">
+        <div class="card-icon">🔱</div>
+        <h3>Poseidón</h3>
+        <p>Monitor de inyección multipantalla (Llancacheo y Aulen).</p>
+    </a>
+</div>
+<!-- Test Github Actions Deploy -->
+{% endblock %}

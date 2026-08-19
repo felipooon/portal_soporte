@@ -1,145 +1,171 @@
-{% extends 'base.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="es-cl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Soporte - Innovex</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+        .spa-layout {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            background-color: var(--bg-dark);
+        }
+        .spa-sidebar {
+            width: 250px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+        .spa-brand {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+            text-decoration: none;
+            color: white;
+            font-size: 1.1rem;
+        }
+        .spa-brand img {
+            height: 24px;
+            margin-right: 10px;
+        }
+        .spa-nav {
+            flex: 1;
+            padding: 10px 0;
+            overflow-y: auto;
+        }
+        .spa-nav-item {
+            display: block;
+            padding: 15px 20px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .spa-nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+        .spa-nav-item.active {
+            background: rgba(var(--primary-rgb), 0.1);
+            color: var(--primary);
+            border-left-color: var(--primary);
+        }
+        .spa-content {
+            flex: 1;
+            background: var(--bg-dark);
+            position: relative;
+        }
+        .spa-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-animation"></div>
+    <div class="spa-layout glass-effect">
+        <aside class="spa-sidebar">
+            <a href="{% url 'index' %}" class="spa-brand">
+                <img src="https://dataweb.innovex.cl/static/img/innovex.png" alt="Innovex Logo">
+                <span><span style="color: #f1c40f;">In</span>novex</span>
+            </a>
+            <nav class="spa-nav">
+                <div style="padding: 10px 20px; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); opacity: 0.7; margin-top: 5px;">Inicio</div>
+                <div class="spa-nav-item active" onclick="loadTool(this, '{% url 'pizarra_embed' %}?embed=1')">
+                    🏠 Pizarra de Turno
+                </div>
+                
+                <div style="padding: 10px 20px; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); opacity: 0.7; margin-top: 15px;">Herramientas Soporte</div>
+                <div class="spa-nav-item" onclick="loadTool(this, '{% url 'correos_masivos' %}?embed=1')">
+                    ✉️ Correos Masivos
+                </div>
+                <div class="spa-nav-item" onclick="loadTool(this, '/certificado/?embed=1')">
+                    📄 Certificado de Instalaciones
+                </div>
+                
+                <div style="padding: 10px 20px; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); opacity: 0.7; margin-top: 15px;">Planillas y Reportes</div>
+                <div class="spa-nav-item" onclick="loadTool(this, '{% url 'planillas_embed' %}?embed=1')">
+                    📂 Planillas Drive
+                </div>
+                <div class="spa-nav-item" onclick="loadTool(this, '{% url 'calendario' %}?embed=1')">
+                    📅 Calendario
+                </div>
+                
+                <div style="padding: 10px 20px; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); opacity: 0.7; margin-top: 15px;">Servicios Innovex</div>
+                <div class="spa-nav-item" onclick="window.open('https://dataweb.innovex.cl', '_blank')" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>🌐 Dataweb</span><span style="font-size: 0.8em; opacity: 0.5;">↗</span>
+                </div>
+                <div class="spa-nav-item" onclick="window.open('https://nextcore.innovex.cl/monitor', '_blank')" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>🖥️ Nextcore</span><span style="font-size: 0.8em; opacity: 0.5;">↗</span>
+                </div>
+                <div class="spa-nav-item" onclick="window.open('https://erp.innovex.cl/web#action=106&model=calendar.event&view_type=calendar&menu_id=81', '_blank')" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>⚙️ Odoo</span><span style="font-size: 0.8em; opacity: 0.5;">↗</span>
+                </div>
+                <div class="spa-nav-item" onclick="loadTool(this, '{% url 'poseidon' %}?embed=1')">
+                    🔱 Poseidón
+                </div>
+            </nav>
+        </aside>
+        <main class="spa-content">
+            <iframe id="main-frame" class="spa-iframe" src="{% url 'pizarra_embed' %}?embed=1"></iframe>
+        </main>
+    </div>
 
-{% block title %}Dashboard - Innovex Soporte{% endblock %}
-
-{% block content %}
-<header style="text-align: center; margin-bottom: 3rem;">
-    <h1>Portal de Soporte</h1>
-    <p class="subtitle">Herramientas y servicios internos para el equipo de Innovex</p>
-</header>
-
-<h2 class="section-title">Bitácora / Pizarra de Turno</h2>
-<div class="card glass-effect" style="margin-bottom: 3rem; padding: 1.5rem; position: relative;">
-    <p style="margin-top: 0; color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.9rem;">
-        📝 Handover rápido para el equipo. <span id="bitacora-status" style="float: right; color: var(--success); font-size: 0.8rem;">Última act: {{ bitacora.actualizado_en|date:"d/m/Y H:i" }}</span>
-    </p>
-    <textarea id="bitacora-texto" class="glass-effect" style="width: 100%; height: 300px; resize: vertical; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: var(--text-primary); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 1.1rem; line-height: 1.5;">{{ bitacora.texto }}</textarea>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const textarea = document.getElementById('bitacora-texto');
-    const statusSpan = document.getElementById('bitacora-status');
-    let bitacoraTimeout;
-
-    if(textarea) {
-        textarea.addEventListener('input', function() {
-            statusSpan.textContent = 'Escribiendo...';
-            statusSpan.style.color = 'var(--warning)';
-            
-            clearTimeout(bitacoraTimeout);
-            bitacoraTimeout = setTimeout(() => {
-                statusSpan.textContent = 'Guardando...';
-                fetch("{% url 'actualizar_bitacora' %}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-                    body: JSON.stringify({texto: textarea.value})
-                })
-                .then(r => r.json())
-                .then(d => {
-                    if(d.status === 'ok') {
-                        statusSpan.textContent = 'Guardado ' + d.actualizado_en;
-                        statusSpan.style.color = 'var(--success)';
-                    }
-                });
-            }, 1000);
-        });
-
-        // Actualización periódica (Polling)
-        setInterval(() => {
-            // Solo actualizamos si el usuario no tiene el cursor puesto en la pizarra (para no interrumpir su escritura)
-            if (document.activeElement !== textarea) {
-                fetch("{% url 'actualizar_bitacora' %}")
-                .then(r => r.json())
-                .then(d => {
-                    if (d.status === 'ok') {
-                        // Si el texto que viene del servidor es diferente al actual, lo actualizamos
-                        if (textarea.value !== d.texto) {
-                            textarea.value = d.texto;
-                            statusSpan.textContent = 'Actualizado ' + d.actualizado_en;
-                            statusSpan.style.color = 'var(--success)';
-                        }
-                    }
-                })
-                .catch(err => console.error("Error al actualizar pizarra:", err));
+    <script>
+        function loadTool(element, url) {
+            // Update active state
+            document.querySelectorAll('.spa-nav-item').forEach(el => el.classList.remove('active'));
+            if (element) {
+                element.classList.add('active');
             }
-        }, 5000); // Revisa cada 5 segundos
-    }
-});
-</script>
 
-<h2 class="section-title">Herramientas Soporte</h2>
-<div class="grid">
-    {% comment %}
-    <a href="{% url 'trac_wiki' %}" class="card glass-effect">
-        <div class="card-icon">📚</div>
-        <h3>Buscador Trac Wiki</h3>
-        <p>Buscador inteligente y explorador del índice de procedimientos internos.</p>
-    </a>
-    {% endcomment %}
+            // Update iframe src
+            document.getElementById('main-frame').src = url;
+            
+            // Save state
+            localStorage.setItem('currentToolUrl', url);
+        }
 
-    <a href="{% url 'correos_masivos' %}" class="card glass-effect">
-        <div class="card-icon">✉️</div>
-        <h3>Correos Masivos Fin de Semana</h3>
-        <p>Herramienta para programar y enviar comunicaciones masivas a clientes durante los fines de semana.</p>
-    </a>
-
-    <a href="{% url 'certificado_index' %}" class="card glass-effect">
-        <div class="card-icon">📄</div>
-        <h3>Certificado de Instalaciones</h3>
-        <p>Generación y consulta de certificados para las instalaciones de equipos y sistemas.</p>
-    </a>
-</div>
-
-<h2 class="section-title">Planillas y Reportes</h2>
-<div class="grid">
-    <a href="https://docs.google.com/spreadsheets/d/1HAMmFlPS8s4N8sIgcZLLryEVQzIsWRxoU5ST3oBZDQM/edit?gid=1731426176#gid=1731426176"
-        target="_blank" class="card glass-effect">
-        <div class="card-icon">📊</div>
-        <h3>IP Fijas</h3>
-        <p>Planilla Google Sheets de registro de IPs fijas de clientes e instalaciones.</p>
-    </a>
-
-    <a href="https://docs.google.com/spreadsheets/d/1bwpqpb3B0EtWXZdNWAPQNYis9KRtD2NNehN9fIfwvWY/edit?gid=398395734#gid=398395734"
-        target="_blank" class="card glass-effect">
-        <div class="card-icon">⚠️</div>
-        <h3>Fallas MAM</h3>
-        <p>Planilla Google Sheets para el seguimiento y reporte de Fallas MAM.</p>
-    </a>
-
-    <a href="{% url 'calendario' %}" class="card glass-effect">
-        <div class="card-icon">📅</div>
-        <h3>Calendario</h3>
-        <p>Vista embebida del calendario de turnos y actividades del equipo.</p>
-    </a>
-</div>
-
-<h2 class="section-title">Servicios Innovex</h2>
-<div class="grid">
-    <a href="https://dataweb.innovex.cl" target="_blank" class="card glass-effect">
-        <div class="card-icon">🌐</div>
-        <h3>Dataweb</h3>
-        <p>Plataforma de datos y servicios web para clientes de Innovex.</p>
-    </a>
-
-    <a href="https://nextcore.innovex.cl/monitor" target="_blank" class="card glass-effect">
-        <div class="card-icon">🖥️</div>
-        <h3>Nextcore</h3>
-        <p>Monitor del sistema Nextcore para equipos e instalaciones.</p>
-    </a>
-
-    <a href="https://erp.innovex.cl/web#action=106&model=calendar.event&view_type=calendar&menu_id=81" target="_blank"
-        class="card glass-effect">
-        <div class="card-icon">⚙️</div>
-        <h3>Odoo</h3>
-        <p>Acceso directo al calendario y planificación del ERP corporativo.</p>
-    </a>
-
-    <a href="{% url 'poseidon' %}" class="card glass-effect">
-        <div class="card-icon">🔱</div>
-        <h3>Poseidón</h3>
-        <p>Monitor de inyección multipantalla (Llancacheo y Aulen).</p>
-    </a>
-</div>
-<!-- Test Github Actions Deploy -->
-{% endblock %}
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedUrl = localStorage.getItem('currentToolUrl');
+            if (savedUrl) {
+                // Find the sidebar item that matches this URL
+                const navItems = document.querySelectorAll('.spa-nav-item');
+                let found = false;
+                for (let el of navItems) {
+                    const onclickAttr = el.getAttribute('onclick');
+                    if (onclickAttr && onclickAttr.includes(savedUrl)) {
+                        // Just update classes and src to avoid recursive loadTool call if we want
+                        document.querySelectorAll('.spa-nav-item').forEach(e => e.classList.remove('active'));
+                        el.classList.add('active');
+                        document.getElementById('main-frame').src = savedUrl;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    document.getElementById('main-frame').src = savedUrl;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
